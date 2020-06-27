@@ -1,0 +1,36 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "debug",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/apps/TrainGame",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [
+				{
+					"name": "LD_LIBRARY_PATH",
+					"value": "/home/cmfcmf/dev/train-game/vendor/1.2.141.2/x86_64/lib"
+				},
+				{
+					"name": "VK_LAYER_PATH",
+					"value": "/home/cmfcmf/dev/train-game/vendor/1.2.141.2/x86_64/etc/vulkan/explicit_layer.d"
+				}
+			],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "Automatische Strukturierung und Einrückung für \"gdb\" aktivieren",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				}
+			],
+		}
+	]
+}
