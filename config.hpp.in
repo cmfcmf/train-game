@@ -1,0 +1,3 @@
+#define TrainGame_VERSION_MAJOR @TrainGame_VERSION_MAJOR@
+#define TrainGame_VERSION_MINOR @TrainGame_VERSION_MINOR@
+#define TrainGame_VERSION_PATCH @TrainGame_VERSION_PATCH@

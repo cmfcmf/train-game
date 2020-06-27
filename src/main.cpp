@@ -2,11 +2,12 @@
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../vendor/stb_image.h"
+#include "../vendor/stb/stb_image.h"
 
 #include "main.hpp"
 #include "game.hpp"
 #include "xyz_reader.hpp"
+#include "config.hpp"
 
 void adjustNormal(std::vector<Vertex> &vertices, size_t a, size_t b, size_t c) {
 	auto &A = vertices[a];
@@ -28,6 +29,7 @@ float randomBetween0And1() {
 
 int main()
 {
+	std::cout << "TrainGame " << TrainGame_VERSION_MAJOR << "." << TrainGame_VERSION_MINOR << "." << TrainGame_VERSION_PATCH << std::endl;
 	const auto reader = XYZReader("dataset/dgm/raw/dgm_33372-5822.xyz");
 
 	const size_t NUM_ROWS = 2001;

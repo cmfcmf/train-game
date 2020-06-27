@@ -1,5 +1,5 @@
 #include "game.hpp"
-#include "../vendor/stb_image.h"
+#include "../vendor/stb/stb_image.h"
 
 static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
 {

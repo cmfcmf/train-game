@@ -47,6 +47,8 @@
 		"fstream": "cpp",
 		"optional": "cpp",
 		"variant": "cpp",
-		"chrono": "cpp"
+		"chrono": "cpp",
+		"*.in": "cpp"
 	},
+	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 }
