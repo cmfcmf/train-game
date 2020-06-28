@@ -42,3 +42,8 @@ target_link_libraries(TrainGame ZLIB::ZLIB)
 add_subdirectory(vendor/GeographicLib-1.50.1)
 include_directories(vendor/GeographicLib-1.50.1/include)
 target_link_libraries(TrainGame GeographicLib)
+
+# CityGML
+find_package(CityGML REQUIRED)
+target_link_libraries(TrainGame citygml)
+include_directories(${CITYGML_INCLUDE_DIR})

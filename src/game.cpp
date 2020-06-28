@@ -1511,7 +1511,7 @@ void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
 	ubo.model = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(
 		cameraPosition, // eye
-		glm::vec3(cameraPosition.x, cameraPosition.y - 60.0f, 0.0f), // center
+		glm::vec3(cameraPosition.x, cameraPosition.y - 120.0f, 0.0f), // center
 		glm::vec3(0.0f, 0.0f, 1.0f) // up
 	);
 

@@ -52,7 +52,8 @@
 		"regex": "cpp",
 		"unordered_map": "cpp",
 		"unordered_set": "cpp",
-		"*.def": "cpp"
+		"*.def": "cpp",
+		"complex": "cpp"
 	},
 	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 }

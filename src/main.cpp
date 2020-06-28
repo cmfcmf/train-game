@@ -17,6 +17,7 @@
 #include "config.hpp"
 #include "osm_element.hpp"
 #include "coordinate_helper.hpp"
+#include "citygml_reader.hpp"
 
 void adjustNormal(std::vector<Vertex> &vertices, size_t a, size_t b, size_t c)
 {
@@ -131,17 +132,20 @@ int main()
 
 	const auto minX = 372000.0f;
 	const auto maxX = 374000.0f;
-	const auto minY = 5822000.0f;
-	const auto maxY = 5824000.0f;
+	const auto minY = 5824000.0f;
+	const auto maxY = 5826000.0f;
 
 	const auto x = static_cast<size_t>(minX / 1000.0f);
 	const auto y = static_cast<size_t>(minY / 1000.0f);
+	const auto initialCameraPosition = glm::vec2(-minX, -minY);
 
 	const auto heightMapFilePath = "dataset/dgm/raw/dgm_33" + std::to_string(x) + "-" + std::to_string(y) + ".xyz";
 	const auto textureImageFilePath = "dataset/dop/raw/dop_33" + std::to_string(x) + "-" + std::to_string(y) + ".jpg";
+	const auto cityGMLFilePath = "dataset/3d_gebaeude_lod2/raw/lod2_33" + std::to_string(x) + "-" + std::to_string(y) + "_geb.gml";
 	const auto osmFilePath = "dataset/osm/brandenburg-latest.osm.pbf";
 
-	const auto initialCameraPosition = glm::vec2(-minX, -minY);
+	CityGMLReader cityGMLReader(cityGMLFilePath);
+	const auto &[buildingVertices, buildingIndices] = cityGMLReader.read();
 
 	osmium::io::Reader osmReader{osmFilePath, osmium::osm_entity_bits::node | osmium::osm_entity_bits::way};
 	MyOSMHandler osmHandler(minX, maxX, minY, maxY);
@@ -246,6 +250,14 @@ int main()
 			indices.push_back(offset + 2);
 			indices.push_back(offset + 3);
 		}
+	}
+
+	const auto buildingVertexOffset = vertices.size();
+	for (const auto &vertex : buildingVertices) {
+		vertices.push_back(vertex);
+	}
+	for (const auto &index : buildingIndices) {
+		indices.push_back(buildingVertexOffset + index);
 	}
 
 	// std::cout << indices[0] << std::endl
