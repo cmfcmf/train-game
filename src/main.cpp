@@ -4,6 +4,7 @@
 #include <map>
 
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_JPEG
 #include "../vendor/stb/stb_image.h"
 
 #include <osmium/handler.hpp>
@@ -18,6 +19,9 @@
 #include "osm_element.hpp"
 #include "coordinate_helper.hpp"
 #include "citygml_reader.hpp"
+#include "chunk.hpp"
+#include "loaders/height_data_loader.hpp"
+#include "loaders/satelite_image_loader.hpp"
 
 void adjustNormal(std::vector<Vertex> &vertices, size_t a, size_t b, size_t c)
 {
@@ -86,7 +90,7 @@ public:
 
 		const auto &tags = way.tags();
 		const auto &railwayTag = tags.get_value_by_key("railway");
-		const auto isProperRail = railwayTag != nullptr && std::strcmp(railwayTag, "rail") == 0;
+		const auto isProperRail = railwayTag != nullptr && (std::strcmp(railwayTag, "rail") == 0 || std::strcmp(railwayTag, "light_rail") == 0 || std::strcmp(railwayTag, "tram") == 0);
 		if (!isProperRail)
 		{
 			return;
@@ -130,23 +134,23 @@ int main()
 {
 	std::cout << "TrainGame " << TrainGame_VERSION_MAJOR << "." << TrainGame_VERSION_MINOR << "." << TrainGame_VERSION_PATCH << std::endl;
 
-	const auto minX = 372000.0f;
-	const auto maxX = 374000.0f;
-	const auto minY = 5824000.0f;
-	const auto maxY = 5826000.0f;
+	const auto minX = 368000.0f;
+	const auto minY = 5806000.0f;
+	const auto extent = 2000;
+	const auto maxX = minX + extent;
+	const auto maxY = minY + extent;
+
+	auto heightDataLoader = HeightDataLoader();
+	auto sateliteImageLoader = SateliteImageLoader();
+	auto buildingsLoader = BuildingsLoader();
+	auto chunk = Chunk({ minX, minY }, extent);
+	chunk.load(heightDataLoader, sateliteImageLoader, buildingsLoader);
 
 	const auto x = static_cast<size_t>(minX / 1000.0f);
 	const auto y = static_cast<size_t>(minY / 1000.0f);
 	const auto initialCameraPosition = glm::vec2(-minX, -minY);
 
-	const auto heightMapFilePath = "dataset/dgm/raw/dgm_33" + std::to_string(x) + "-" + std::to_string(y) + ".xyz";
-	const auto textureImageFilePath = "dataset/dop/raw/dop_33" + std::to_string(x) + "-" + std::to_string(y) + ".jpg";
-	const auto cityGMLFilePath = "dataset/3d_gebaeude_lod2/raw/lod2_33" + std::to_string(x) + "-" + std::to_string(y) + "_geb.gml";
-	const auto osmFilePath = "dataset/osm/brandenburg-latest.osm.pbf";
-
-	CityGMLReader cityGMLReader(cityGMLFilePath);
-	const auto &[buildingVertices, buildingIndices] = cityGMLReader.read();
-
+	const auto osmFilePath = "datasets/osm/brandenburg-latest.osm.pbf";
 	osmium::io::Reader osmReader{osmFilePath, osmium::osm_entity_bits::node | osmium::osm_entity_bits::way};
 	MyOSMHandler osmHandler(minX, maxX, minY, maxY);
 	osmium::apply(osmReader, osmHandler);
@@ -156,19 +160,18 @@ int main()
 	std::cout << "Found " << osmNodes.size() << " OSM nodes." << std::endl;
 	std::cout << "Found " << osmWays.size() << " OSM ways." << std::endl;
 
-	const size_t NUM_ROWS = 2001;
-
-	const auto heightMapReader = XYZReader(heightMapFilePath);
-	const auto result = heightMapReader.read(NUM_ROWS);
-
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
-	for (const auto &each : result)
+	const auto &heightData = chunk.getHeightData();
+	for (auto i = 0; i < (extent + 1) * (extent + 1); i++)
 	{
+		float x = minX + i % (extent + 1);
+		float y = minY + i / (extent + 1);
+		float z = heightData[i];
+
 		Vertex vertex = {
-			{-std::get<0>(each), -std::get<1>(each), std::get<2>(each)},
-			// { randomBetween0And1(), randomBetween0And1(), randomBetween0And1() },
+			{-x, -y, z},
 			{0.373f, 0.608f, 0.106f},
 			{0.0f, 0.0f, 0.0f},
 			{0.0f, 0.0f}};
@@ -177,21 +180,15 @@ int main()
 		vertices.push_back(vertex);
 	}
 
-	const auto [min, max] = std::minmax_element(vertices.begin(), vertices.end(), [](const auto &a, const auto &b) {
-		return a.pos.z < b.pos.z;
-	});
-
-	std::cout << "min: " << min->pos.z << " max: " << max->pos.z << std::endl;
-
 	std::cout << "Generated vertices" << std::endl;
 
-	for (size_t row = 0; row < NUM_ROWS - 1; row++)
+	for (size_t row = 0; row < extent; row++)
 	{
-		for (size_t column = 0; column < 2000; column++)
+		for (size_t column = 0; column < extent; column++)
 		{
-			const auto tl = column + row * 2001;
+			const auto tl = column + row * (extent + 1);
 			const auto tr = tl + 1;
-			const auto bl = column + (row + 1) * 2001;
+			const auto bl = column + (row + 1) * (extent + 1);
 			const auto br = bl + 1;
 
 			indices.push_back(tr);
@@ -205,12 +202,13 @@ int main()
 			adjustNormal(vertices, tr, br, bl);
 
 			vertices[tl].texCoord = {
-				column / 2001.0f,
-				row / -2001.0f};
+				column / (extent + 1.0f),
+				row / (extent + 1.0f)};
 		}
 	}
 
 	std::cout << "Generated indices" << std::endl;
+
 
 	for (const auto &way : osmWays) {
 		const auto &nodes = way.getNodes();
@@ -252,41 +250,16 @@ int main()
 		}
 	}
 
+	const auto &[buildingVertices, buildingIndices] = chunk.getBuildings();
 	const auto buildingVertexOffset = vertices.size();
 	for (const auto &vertex : buildingVertices) {
-		vertices.push_back(vertex);
+		vertices.push_back({vertex.position, vertex.color, vertex.normal, {0.0f, 0.0f}});
 	}
 	for (const auto &index : buildingIndices) {
 		indices.push_back(buildingVertexOffset + index);
 	}
 
-	// std::cout << indices[0] << std::endl
-	// 		  << indices[1] << std::endl
-	// 		  << indices[2] << std::endl;
-	// std::cout << vertices[2001].pos.x << std::endl
-	// 		  << vertices[2001].pos.y << std::endl;
-
-	// vertices[0].color = {1.0f, 0.0f, 0.0f};
-	// vertices[vertices.size() - 1].color = {0.0f, 0.0f, 1.0f};
-
-	/*
-	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-
-		{{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-	};
-
-	const std::vector<uint32_t> indices = {
-		0, 1, 2,
-		2, 3, 0,
-		1, 4, 2
-	};
-*/
-
-	TrainGameApplication app(vertices, indices, textureImageFilePath, initialCameraPosition);
+	TrainGameApplication app(vertices, indices, chunk.getSateliteImage(), initialCameraPosition);
 
 	try
 	{

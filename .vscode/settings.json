@@ -1,5 +1,5 @@
 {
-	"C_Cpp.default.cppStandard": "gnu++17",
+	"C_Cpp.default.cppStandard": "gnu++20",
 	"editor.autoIndent": "full",
 	"editor.tabSize": 4,
 	"editor.insertSpaces": false,
@@ -53,7 +53,8 @@
 		"unordered_map": "cpp",
 		"unordered_set": "cpp",
 		"*.def": "cpp",
-		"complex": "cpp"
+		"complex": "cpp",
+		"filesystem": "cpp"
 	},
 	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 }

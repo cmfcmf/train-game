@@ -1,4 +1,4 @@
 /vendor
 /build
-/dataset
+/datasets
 /shaders/**.spv

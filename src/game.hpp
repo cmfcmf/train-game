@@ -24,7 +24,11 @@
 class TrainGameApplication
 {
 public:
-	TrainGameApplication(std::vector<Vertex> vertices, std::vector<uint32_t> indices, const std::string textureImagePath, const glm::vec2 initialCameraPosition) : vertices{vertices}, indices{indices}, _textureImagePath{textureImagePath}, _initialCameraPosition{initialCameraPosition} {}
+	TrainGameApplication(
+		const std::vector<Vertex> vertices,
+		const std::vector<uint32_t> indices,
+		const std::vector<uint32_t> pixels,
+		const glm::vec2 initialCameraPosition) : vertices{vertices}, indices{indices}, pixels{pixels}, _initialCameraPosition{initialCameraPosition} {}
 
 	void run();
 	Keyboard keyboard;
@@ -35,9 +39,9 @@ private:
 	const uint32_t WIDTH = 800;
 	const uint32_t HEIGHT = 600;
 
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-	const std::string _textureImagePath;
+	const std::vector<Vertex> vertices;
+	const std::vector<uint32_t> indices;
+	const std::vector<uint32_t> pixels;
 	const glm::vec2 _initialCameraPosition;
 
 	const std::vector<const char *> validationLayers = {
