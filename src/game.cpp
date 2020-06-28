@@ -1,5 +1,6 @@
 #include "game.hpp"
 #include "../vendor/stb/stb_image.h"
+#include "config.hpp"
 
 static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
 {
@@ -128,7 +129,7 @@ void TrainGameApplication::createInstance()
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "TrainGame";
-	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.applicationVersion = VK_MAKE_VERSION(TrainGame_VERSION_MAJOR, TrainGame_VERSION_MINOR, TrainGame_VERSION_PATCH);
 	appInfo.pEngineName = "No Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
@@ -832,7 +833,7 @@ void TrainGameApplication::createCommandPool()
 
 void TrainGameApplication::createTextureImage() {
 	int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("textures/dop_33372-5822.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(_textureImagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {
@@ -1462,7 +1463,7 @@ void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
 	rotation += glm::radians(90.0f) * delta * direction * -1;
 
 
-	static auto cameraPosition = glm::vec3(0.0f, 60.0f, 70.0f);
+	static auto cameraPosition = glm::vec3(_initialCameraPosition.x, _initialCameraPosition.y, 70.0f);
 	const auto zoom = cameraPosition.z;
 
 	{

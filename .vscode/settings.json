@@ -48,7 +48,11 @@
 		"optional": "cpp",
 		"variant": "cpp",
 		"chrono": "cpp",
-		"*.in": "cpp"
+		"*.in": "cpp",
+		"regex": "cpp",
+		"unordered_map": "cpp",
+		"unordered_set": "cpp",
+		"*.def": "cpp"
 	},
 	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 }

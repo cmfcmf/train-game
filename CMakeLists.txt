@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(TrainGame VERSION 0.0.1)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ENV{VULKAN_SDK} /home/cmfcmf/dev/train-game/vendor/1.2.141.2/x86_64)
@@ -28,3 +30,15 @@ target_link_libraries(TrainGame glfw ${GLFW_LIBRARIES})
 # Vulkan
 find_package(Vulkan REQUIRED)
 target_link_libraries(TrainGame Vulkan::Vulkan)
+
+# Osmium
+find_package(Osmium REQUIRED COMPONENTS pbf)
+include_directories(${OSMIUM_INCLUDE_DIRS})
+
+# ZLib (for Osmium)
+target_link_libraries(TrainGame ZLIB::ZLIB)
+
+# GeographicLib
+add_subdirectory(vendor/GeographicLib-1.50.1)
+include_directories(vendor/GeographicLib-1.50.1/include)
+target_link_libraries(TrainGame GeographicLib)

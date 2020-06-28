@@ -8,14 +8,8 @@ std::vector<std::tuple<float, float, float>> XYZReader::read(const size_t numRow
 	std::ifstream infile(filename);
 	float x, y, z;
 	float lastY = -1;
-	float offsetX, offsetY;
 	for (size_t row = 0; infile >> x >> y >> z;)
 	{
-		if (row == 0) {
-			offsetX = x;
-			offsetY = y;
-		}
-
 		if (y != lastY) {
 			lastY = y;
 			row++;
@@ -23,8 +17,7 @@ std::vector<std::tuple<float, float, float>> XYZReader::read(const size_t numRow
 				break;
 			}
 		}
-		result.emplace_back(x - offsetX, y - offsetY, z);
-
+		result.emplace_back(x, y, z);
 	}
 
 	return result;
