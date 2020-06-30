@@ -7,7 +7,10 @@
 
 #include "loader.hpp"
 
-class SateliteImageLoader : public Loader<std::vector<uint32_t>>
+typedef std::vector<uint32_t> SateliteImageLoaderResult;
+typedef std::vector<std::uint32_t> SateliteImageLoaderRawData;
+
+class SateliteImageLoader : public Loader<SateliteImageLoaderResult, SateliteImageLoaderRawData>
 {
 protected:
 	std::uint32_t getChunkSize() const override { return 2000; };
@@ -19,12 +22,13 @@ protected:
 	const std::uint32_t IMAGE_SIZE = 10000;
 	const std::uint32_t PIXELS_PER_METER = IMAGE_SIZE / 2000;
 
-	std::vector<uint32_t> initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
+	SateliteImageLoaderResult initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
 		std::vector<uint32_t> result(PIXELS_PER_METER * PIXELS_PER_METER * extent * extent);
 		return result;
 	}
 
-	void loadChunk(std::vector<uint32_t> &result, const std::string &filename,
+	SateliteImageLoaderRawData parseFile(const std::string &filename) const;
+	void loadChunk(SateliteImageLoaderResult &result, const SateliteImageLoaderRawData &rawData,
 		const std::uint32_t originX, const std::uint32_t originY,
 		const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override;
 };

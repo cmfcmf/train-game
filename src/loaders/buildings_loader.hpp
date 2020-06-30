@@ -15,8 +15,9 @@ struct BuildingVertex {
 };
 
 typedef std::pair<std::vector<BuildingVertex>, std::vector<std::uint32_t>> BuildingsLoaderResult;
+typedef std::pair<std::vector<Vertex>, std::vector<uint32_t>> BuildingsLoaderRawData;
 
-class BuildingsLoader : public Loader<BuildingsLoaderResult>
+class BuildingsLoader : public Loader<BuildingsLoaderResult, BuildingsLoaderRawData>
 {
 protected:
 	std::uint32_t getChunkSize() const override { return 1000; };
@@ -30,7 +31,8 @@ protected:
 		return result;
 	}
 
-	void loadChunk(BuildingsLoaderResult &result, const std::string &filename,
+	BuildingsLoaderRawData parseFile(const std::string &filename) const;
+	void loadChunk(BuildingsLoaderResult &result, const BuildingsLoaderRawData &rawData,
 		const std::uint32_t originX, const std::uint32_t originY,
 		const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override;
 };

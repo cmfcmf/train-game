@@ -2,12 +2,16 @@
 #include "buildings_loader.hpp"
 #include "../citygml_reader.hpp"
 
-void BuildingsLoader::loadChunk(BuildingsLoaderResult &result, const std::string &filename,
+BuildingsLoaderRawData BuildingsLoader::parseFile(const std::string &filename) const {
+	CityGMLReader cityGMLReader(filename);
+	return cityGMLReader.read();
+}
+
+void BuildingsLoader::loadChunk(BuildingsLoaderResult &result, const BuildingsLoaderRawData &rawData,
 	const std::uint32_t originX, const std::uint32_t originY,
 	const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const {
-
-	CityGMLReader cityGMLReader(filename);
-	const auto &[buildingVertices, buildingIndices] = cityGMLReader.read();
+	// FIXME: This completely ignores extent and requestedX/requestedY.
+	const auto &[buildingVertices, buildingIndices] = rawData;
 
 	const auto indexOffset = result.first.size();
 	for (const auto &vertex : buildingVertices) {

@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cstdlib>
 
-template<typename T>
+template<typename T, typename F>
 class Loader
 {
 public:
@@ -40,13 +40,24 @@ public:
 				unzip(zipPath, rawPath.parent_path(), rawName);
 			}
 
-			loadChunk(result, rawPath, chunkOrigin.first, chunkOrigin.second, requestedX, requestedY, extent);
+			const auto filename = rawPath;
+
+			F rawData;
+			if (_cache.contains(filename)) {
+				rawData = _cache.at(filename);
+			} else {
+				rawData = parseFile(filename);
+			}
+
+			loadChunk(result, rawData, chunkOrigin.first, chunkOrigin.second, requestedX, requestedY, extent);
 		}
 
 		return result;
 	};
 protected:
 	static const auto UTM_ZONE = 33;
+
+	std::map<const std::string, const F> _cache;
 
 	virtual std::uint32_t getChunkSize() const = 0;
 	virtual std::string getName() const = 0;
@@ -55,7 +66,8 @@ protected:
 	virtual std::string getDownloadUrl() const = 0;
 
 	virtual T initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const = 0;
-	virtual void loadChunk(T&, const std::string &filename, const std::uint32_t originX, const std::uint32_t originY,
+	virtual F parseFile(const std::string &filename) const = 0;
+	virtual void loadChunk(T&, const F &rawData, const std::uint32_t originX, const std::uint32_t originY,
 		const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const = 0;
 
 	std::vector<std::pair<std::uint32_t, std::uint32_t>> getChunkOrigins(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const {

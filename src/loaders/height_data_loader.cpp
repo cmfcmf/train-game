@@ -2,11 +2,15 @@
 
 #include "../xyz_reader.hpp"
 
-void HeightDataLoader::loadChunk(std::vector<float> &result, const std::string &filename, const std::uint32_t originX, const std::uint32_t originY,
-	std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const {
+HeightDataLoaderRawData HeightDataLoader::parseFile(const std::string &filename) const {
 	const XYZReader reader(filename);
-	const auto data = reader.read();
-	for (const auto &[absoluteX, absoluteY, z] : data) {
+	return reader.read();
+}
+
+void HeightDataLoader::loadChunk(HeightDataLoaderResult &result, const HeightDataLoaderRawData &rawData,
+	const std::uint32_t originX, const std::uint32_t originY,
+	const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const {
+	for (const auto &[absoluteX, absoluteY, z] : rawData) {
 		const std::uint32_t x = static_cast<std::uint32_t>(absoluteX) - requestedX;
 		const std::uint32_t y = static_cast<std::uint32_t>(absoluteY) - requestedY;
 		if (x < 0 || y < 0) {

@@ -6,7 +6,10 @@
 
 #include "loader.hpp"
 
-class HeightDataLoader : public Loader<std::vector<float>>
+typedef std::vector<float> HeightDataLoaderResult;
+typedef std::vector<std::tuple<float, float, float>> HeightDataLoaderRawData;
+
+class HeightDataLoader : public Loader<HeightDataLoaderResult, HeightDataLoaderRawData>
 {
 protected:
 	std::uint32_t getChunkSize() const override { return 2000; };
@@ -15,11 +18,14 @@ protected:
 	std::string getRawName() const override { return "dgm_{}.xyz"; }
 	std::string getDownloadUrl() const override { return "https://data.geobasis-bb.de/geobasis/daten/dgm/xyz/"; }
 
-	std::vector<float> initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
-		std::vector<float> result((extent + 1) * (extent + 1));
+	HeightDataLoaderResult initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
+		HeightDataLoaderResult result((extent + 1) * (extent + 1));
 		return result;
 	}
 
-	void loadChunk(std::vector<float> &result, const std::string &filename, const std::uint32_t originX, const std::uint32_t originY,
+	HeightDataLoaderRawData parseFile(const std::string &filename) const;
+
+	void loadChunk(HeightDataLoaderResult &result, const HeightDataLoaderRawData &rawData,
+		const std::uint32_t originX, const std::uint32_t originY,
 		const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override;
 };
