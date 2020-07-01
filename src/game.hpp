@@ -20,15 +20,13 @@
 
 #include "keyboard.hpp"
 #include "util.hpp"
+#include "rendered_object.hpp"
 
 class TrainGameApplication
 {
 public:
-	TrainGameApplication(
-		const std::vector<Vertex> vertices,
-		const std::vector<uint32_t> indices,
-		const std::vector<uint32_t> pixels,
-		const glm::vec2 initialCameraPosition) : vertices{vertices}, indices{indices}, pixels{pixels}, _initialCameraPosition{initialCameraPosition} {}
+	TrainGameApplication(const std::vector<RenderedObject> &renderedObjects, const glm::vec2 initialCameraPosition)
+		: m_renderedObjects{renderedObjects}, _initialCameraPosition{initialCameraPosition} {}
 
 	void run();
 	Keyboard keyboard;
@@ -39,9 +37,8 @@ private:
 	const uint32_t WIDTH = 800;
 	const uint32_t HEIGHT = 600;
 
-	const std::vector<Vertex> vertices;
-	const std::vector<uint32_t> indices;
-	const std::vector<uint32_t> pixels;
+	const std::vector<RenderedObject> m_renderedObjects;
+
 	const glm::vec2 _initialCameraPosition;
 
 	const std::vector<const char *> validationLayers = {

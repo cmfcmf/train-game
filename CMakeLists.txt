@@ -21,6 +21,7 @@ add_executable(TrainGame
 	src/game.cpp
 	src/keyboard.cpp
 	src/main.cpp
+	src/rendered_object.cpp
 	src/osm_element.cpp
 	src/util.cpp
 	src/xyz_reader.cpp
@@ -29,6 +30,8 @@ add_executable(TrainGame
 target_include_directories(TrainGame PUBLIC
                            "${PROJECT_BINARY_DIR}"
 						  )
+
+add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 # glfw
 # https://www.glfw.org/docs/3.3/build_guide.html

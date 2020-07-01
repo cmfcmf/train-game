@@ -1,4 +1,7 @@
 #include "game.hpp"
+
+#include <numeric>
+
 #include "../vendor/stb/stb_image.h"
 #include "config.hpp"
 
@@ -832,6 +835,8 @@ void TrainGameApplication::createCommandPool()
 }
 
 void TrainGameApplication::createTextureImage() {
+	const auto pixels = m_renderedObjects[0].getTexture(); // FIXME
+
 	int texWidth = std::sqrt(pixels.size());
 	int texHeight = std::sqrt(pixels.size());
     VkDeviceSize imageSize = pixels.size() * 4;
@@ -1055,7 +1060,10 @@ void TrainGameApplication::copyBufferToImage(VkBuffer buffer, VkImage image, uin
 
 void TrainGameApplication::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+	const uint64_t vertexCount = std::accumulate(m_renderedObjects.begin(), m_renderedObjects.end(), 0,
+		[](auto count, const auto &renderedObject){ return count + renderedObject.getVertices().size(); });
+
+	VkDeviceSize bufferSize = sizeof(Vertex) * vertexCount;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -1063,7 +1071,11 @@ void TrainGameApplication::createVertexBuffer()
 
 	void *data;
 	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), (size_t)bufferSize);
+	size_t idx = 0;
+	for (const auto &renderedObject : m_renderedObjects) {
+		memcpy(static_cast<Vertex*>(data) + idx, renderedObject.getVertices().data(), sizeof(Vertex) * renderedObject.getVertices().size());
+		idx += renderedObject.getVertices().size();
+	}
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
@@ -1076,7 +1088,10 @@ void TrainGameApplication::createVertexBuffer()
 
 void TrainGameApplication::createIndexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+	const uint64_t indexCount = std::accumulate(m_renderedObjects.begin(), m_renderedObjects.end(), 0,
+		[](auto count, const auto &renderedObject){ return count + renderedObject.getIndices().size(); });
+
+	VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -1084,7 +1099,11 @@ void TrainGameApplication::createIndexBuffer()
 
 	void *data;
 	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, indices.data(), (size_t)bufferSize);
+	size_t idx = 0;
+	for (const auto &renderedObject : m_renderedObjects) {
+		memcpy(static_cast<uint32_t*>(data) + idx, renderedObject.getIndices().data(), sizeof(uint32_t) * renderedObject.getIndices().size());
+		idx += renderedObject.getIndices().size();
+	}
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
@@ -1287,7 +1306,13 @@ void TrainGameApplication::createCommandBuffers()
 
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		size_t indexOffset = 0;
+		size_t vertexOffset = 0;
+		for (const auto &renderedObject : m_renderedObjects) {
+			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(renderedObject.getIndices().size()), 1, indexOffset, vertexOffset, 0);
+			indexOffset += renderedObject.getIndices().size();
+			vertexOffset += renderedObject.getVertices().size();
+		}
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 

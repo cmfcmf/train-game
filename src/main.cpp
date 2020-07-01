@@ -23,21 +23,6 @@
 #include "loaders/height_data_loader.hpp"
 #include "loaders/satelite_image_loader.hpp"
 
-void adjustNormal(std::vector<Vertex> &vertices, size_t a, size_t b, size_t c)
-{
-	auto &A = vertices[a];
-	auto &B = vertices[b];
-	auto &C = vertices[c];
-
-	glm::vec3 normal = glm::normalize(glm::cross(B.pos - A.pos, C.pos - A.pos));
-	// normal *= -1;
-	// std::cout << normal.x << ", " << normal.y << ", " << normal.z << std::endl;
-
-	A.normal += normal;
-	B.normal += normal;
-	C.normal += normal;
-}
-
 float randomBetween0And1()
 {
 	return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
@@ -153,116 +138,67 @@ int main()
 	const auto y = static_cast<size_t>(minY / 1000.0f);
 	const auto initialCameraPosition = glm::vec2(minX, minY);
 
-	const auto osmFilePath = "datasets/osm/brandenburg-latest.osm.pbf";
-	osmium::io::Reader osmReader{osmFilePath, osmium::osm_entity_bits::node | osmium::osm_entity_bits::way};
-	MyOSMHandler osmHandler(minX, maxX, minY, maxY);
-	osmium::apply(osmReader, osmHandler);
-	osmReader.close();
-	const auto &[osmNodes, osmWays] = osmHandler.get();
+	auto renderedObjects = std::vector<RenderedObject>();
+	renderedObjects.insert(renderedObjects.begin(), chunk.getRenderedObjects().begin(), chunk.getRenderedObjects().end());
 
-	std::cout << "Found " << osmNodes.size() << " OSM nodes." << std::endl;
-	std::cout << "Found " << osmWays.size() << " OSM ways." << std::endl;
-
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-
-	const auto &heightData = chunk.getHeightData();
-	for (auto i = 0; i < (extent + 1) * (extent + 1); i++)
 	{
-		float x = minX + i % (extent + 1);
-		float y = minY + i / (extent + 1);
-		float z = heightData[i];
+		const auto osmFilePath = "datasets/osm/brandenburg-latest.osm.pbf";
+		osmium::io::Reader osmReader{osmFilePath, osmium::osm_entity_bits::node | osmium::osm_entity_bits::way};
+		MyOSMHandler osmHandler(minX, maxX, minY, maxY);
+		osmium::apply(osmReader, osmHandler);
+		osmReader.close();
+		const auto &[osmNodes, osmWays] = osmHandler.get();
 
-		Vertex vertex = {
-			{x, y, z},
-			{0.373f, 0.608f, 0.106f},
-			{0.0f, 0.0f, 1.0f},
-			{0.0f, 0.0f}};
-		const auto color = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-		vertex.color *= 1.0f - 0.05f + (0.10 * color);
-		vertices.push_back(vertex);
-	}
+		std::cout << "Found " << osmNodes.size() << " OSM nodes." << std::endl;
+		std::cout << "Found " << osmWays.size() << " OSM ways." << std::endl;
 
-	std::cout << "Generated vertices" << std::endl;
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
 
-	for (size_t row = 0; row < extent; row++)
-	{
-		for (size_t column = 0; column < extent; column++)
-		{
-			const auto tl = column + row * (extent + 1);
-			const auto tr = tl + 1;
-			const auto bl = column + (row + 1) * (extent + 1);
-			const auto br = bl + 1;
+		for (const auto &way : osmWays) {
+			const auto &nodes = way.getNodes();
+			for (size_t i = 0; i < nodes.size() - 1; i++) {
+				const auto &from = nodes[i];
+				const auto &to = nodes[i + 1];
 
-			indices.push_back(tr);
-			indices.push_back(bl);
-			indices.push_back(tl);
-			adjustNormal(vertices, tr, bl, tl);
+				const auto &start = from.getLocation();
+				const auto &end = to.getLocation();
+				const auto &segment = end - start;
+				const auto &segment90 = glm::normalize(glm::vec2(-segment.y, segment.x));
 
-			indices.push_back(tr);
-			indices.push_back(br);
-			indices.push_back(bl);
-			adjustNormal(vertices, tr, br, bl);
+				const auto gauge = 1.435f;
 
-			vertices[tl].texCoord = {
-				column / (extent + 1.0f),
-				row / (extent + 1.0f)};
-		}
-	}
+				const std::array<glm::vec2, 4> positions = {
+					start - segment90 * (gauge / 2),
+					start + segment90 * (gauge / 2),
+					end - segment90 * (gauge / 2),
+					end + segment90 * (gauge / 2),
+				};
+				const auto offset = vertices.size();
+				const auto color = glm::vec3(1.0f, randomBetween0And1(), 0.0f);
+				for (const auto &position : positions) {
+					vertices.push_back({
+						{position.x, position.y, 35},
+						color,
+						{0.0f, 0.0f, 1.0f},
+						{0.0f, 0.0f}
+					});
+				}
 
-	std::cout << "Generated indices" << std::endl;
+				indices.push_back(offset + 0);
+				indices.push_back(offset + 2);
+				indices.push_back(offset + 1);
 
-
-	for (const auto &way : osmWays) {
-		const auto &nodes = way.getNodes();
-		for (size_t i = 0; i < nodes.size() - 1; i++) {
-			const auto &from = nodes[i];
-			const auto &to = nodes[i + 1];
-
-			const auto &start = from.getLocation();
-			const auto &end = to.getLocation();
-			const auto &segment = end - start;
-			const auto &segment90 = glm::normalize(glm::vec2(-segment.y, segment.x));
-
-			const auto gauge = 1.435f;
-
-			const std::array<glm::vec2, 4> positions = {
-				start - segment90 * (gauge / 2),
-				start + segment90 * (gauge / 2),
-				end - segment90 * (gauge / 2),
-				end + segment90 * (gauge / 2),
-			};
-			const auto offset = vertices.size();
-			const auto color = glm::vec3(1.0f, randomBetween0And1(), 0.0f);
-			for (const auto &position : positions) {
-				vertices.push_back({
-					{position.x, position.y, 35},
-					color,
-					{0.0f, 0.0f, 1.0f},
-					{0.0f, 0.0f}
-				});
+				indices.push_back(offset + 1);
+				indices.push_back(offset + 2);
+				indices.push_back(offset + 3);
 			}
-
-			indices.push_back(offset + 0);
-			indices.push_back(offset + 2);
-			indices.push_back(offset + 1);
-
-			indices.push_back(offset + 1);
-			indices.push_back(offset + 2);
-			indices.push_back(offset + 3);
 		}
+
+		renderedObjects.push_back(RenderedObject(std::move(vertices), std::move(indices)));
 	}
 
-	const auto &[buildingVertices, buildingIndices] = chunk.getBuildings();
-	const auto buildingVertexOffset = vertices.size();
-	for (const auto &vertex : buildingVertices) {
-		vertices.push_back({vertex.position, vertex.color, vertex.normal, {0.0f, 0.0f}});
-	}
-	for (const auto &index : buildingIndices) {
-		indices.push_back(buildingVertexOffset + index);
-	}
-
-	TrainGameApplication app(vertices, indices, chunk.getSateliteImage(), initialCameraPosition);
+	TrainGameApplication app(renderedObjects, initialCameraPosition);
 
 	try
 	{
