@@ -18,7 +18,7 @@ protected:
 	std::string getRawName() const override { return "dgm_{}.xyz"; }
 	std::string getDownloadUrl() const override { return "https://data.geobasis-bb.de/geobasis/daten/dgm/xyz/"; }
 
-	HeightDataLoaderResult initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
+	HeightDataLoaderResult initResult(__attribute__((unused)) const std::uint32_t requestedX, __attribute__((unused)) const std::uint32_t requestedY, const std::uint16_t extent) const override {
 		HeightDataLoaderResult result((extent + 1) * (extent + 1));
 		return result;
 	}

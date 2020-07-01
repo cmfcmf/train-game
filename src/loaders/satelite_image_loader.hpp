@@ -22,7 +22,7 @@ protected:
 	const std::uint32_t IMAGE_SIZE = 10000;
 	const std::uint32_t PIXELS_PER_METER = IMAGE_SIZE / 2000;
 
-	SateliteImageLoaderResult initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
+	SateliteImageLoaderResult initResult(__attribute__((unused)) const std::uint32_t requestedX, __attribute__((unused)) const std::uint32_t requestedY, const std::uint16_t extent) const override {
 		std::vector<uint32_t> result(PIXELS_PER_METER * PIXELS_PER_METER * extent * extent);
 		return result;
 	}

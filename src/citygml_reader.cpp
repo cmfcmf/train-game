@@ -12,7 +12,7 @@
 
 void gatherGeometries(std::vector<citygml::Geometry> &geometries, const citygml::Geometry &geometry) {
 	geometries.push_back(geometry);
-	for (auto g = 0; g < geometry.getGeometriesCount(); g++)
+	for (size_t g = 0; g < geometry.getGeometriesCount(); g++)
 	{
 		const auto &childGeometry = geometry.getGeometry(g);
 		gatherGeometries(geometries, childGeometry);
@@ -49,13 +49,13 @@ std::pair<std::vector<Vertex>, std::vector<uint32_t>> CityGMLReader::read() cons
 
 		std::vector<citygml::Geometry> geometries;
 
-		for (auto g = 0; g < object->getGeometriesCount(); g++)
+		for (size_t g = 0; g < object->getGeometriesCount(); g++)
 		{
 			const auto &geometry = object->getGeometry(g);
 			gatherGeometries(geometries, geometry);
 		}
 		for (const auto &geometry : geometries) {
-			for (auto p = 0; p < geometry.getPolygonsCount(); p++)
+			for (size_t p = 0; p < geometry.getPolygonsCount(); p++)
 			{
 				const auto &polygon = geometry.getPolygon(p);
 				for (const auto &index : polygon->getIndices())

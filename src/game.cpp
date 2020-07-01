@@ -2,7 +2,7 @@
 
 #include <numeric>
 
-#include "../vendor/stb/stb_image.h"
+#include <stb_image.h>
 #include "config.hpp"
 
 static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)

@@ -8,11 +8,11 @@ HeightDataLoaderRawData HeightDataLoader::parseFile(const std::string &filename)
 }
 
 void HeightDataLoader::loadChunk(HeightDataLoaderResult &result, const HeightDataLoaderRawData &rawData,
-	const std::uint32_t originX, const std::uint32_t originY,
+	__attribute__((unused)) const std::uint32_t originX, __attribute__((unused)) const std::uint32_t originY,
 	const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const {
 	for (const auto &[absoluteX, absoluteY, z] : rawData) {
-		const std::uint32_t x = static_cast<std::uint32_t>(absoluteX) - requestedX;
-		const std::uint32_t y = static_cast<std::uint32_t>(absoluteY) - requestedY;
+		const std::int32_t x = static_cast<std::int32_t>(absoluteX) - requestedX;
+		const std::int32_t y = static_cast<std::int32_t>(absoluteY) - requestedY;
 		if (x < 0 || y < 0) {
 			continue;
 		}

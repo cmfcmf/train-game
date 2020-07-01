@@ -26,7 +26,7 @@ protected:
 	std::string getRawName() const override { return "lod2_{}_geb.gml"; }
 	std::string getDownloadUrl() const override { return "https://data.geobasis-bb.de/geobasis/daten/3d_gebaeude/lod2_gml/"; }
 
-	BuildingsLoaderResult initResult(const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const override {
+	BuildingsLoaderResult initResult(__attribute__((unused)) const std::uint32_t requestedX, __attribute__((unused)) const std::uint32_t requestedY, __attribute__((unused)) const std::uint16_t extent) const override {
 		BuildingsLoaderResult result;
 		return result;
 	}

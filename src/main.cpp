@@ -5,7 +5,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
-#include "../vendor/stb/stb_image.h"
+#include <stb_image.h>
 
 #include <osmium/handler.hpp>
 #include <osmium/io/pbf_input.hpp>
@@ -134,8 +134,6 @@ int main()
 	auto chunk = Chunk({ minX, minY }, extent);
 	chunk.load(heightDataLoader, sateliteImageLoader, buildingsLoader);
 
-	const auto x = static_cast<size_t>(minX / 1000.0f);
-	const auto y = static_cast<size_t>(minY / 1000.0f);
 	const auto initialCameraPosition = glm::vec2(minX, minY);
 
 	auto renderedObjects = std::vector<RenderedObject>();

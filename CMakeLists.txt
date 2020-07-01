@@ -33,6 +33,8 @@ target_include_directories(TrainGame PUBLIC
 
 add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE)
 
+target_compile_options(TrainGame PRIVATE -Wall -Wextra -pedantic -Werror)
+
 # glfw
 # https://www.glfw.org/docs/3.3/build_guide.html
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -62,3 +64,6 @@ target_link_libraries(TrainGame GeographicLib)
 find_package(CityGML REQUIRED)
 target_link_libraries(TrainGame citygml)
 include_directories(${CITYGML_INCLUDE_DIR})
+
+# stb
+include_directories(SYSTEM vendor/stb)

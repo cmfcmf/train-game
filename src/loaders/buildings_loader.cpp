@@ -8,8 +8,8 @@ BuildingsLoaderRawData BuildingsLoader::parseFile(const std::string &filename) c
 }
 
 void BuildingsLoader::loadChunk(BuildingsLoaderResult &result, const BuildingsLoaderRawData &rawData,
-	const std::uint32_t originX, const std::uint32_t originY,
-	const std::uint32_t requestedX, const std::uint32_t requestedY, const std::uint16_t extent) const {
+	__attribute__((unused)) const std::uint32_t originX, __attribute__((unused)) const std::uint32_t originY,
+	__attribute__((unused)) const std::uint32_t requestedX, __attribute__((unused)) const std::uint32_t requestedY, __attribute__((unused)) const std::uint16_t extent) const {
 	// FIXME: This completely ignores extent and requestedX/requestedY.
 	const auto &[buildingVertices, buildingIndices] = rawData;
 
