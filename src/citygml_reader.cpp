@@ -65,9 +65,9 @@ std::pair<std::vector<Vertex>, std::vector<uint32_t>> CityGMLReader::read() cons
 				for (const auto &vertex : polygon->getVertices())
 				{
 					const auto &normal = vertex.normal();
-					vertices.push_back({glm::vec3(-vertex.x, -vertex.y, vertex.z),
+					vertices.push_back({glm::vec3(vertex.x, vertex.y, vertex.z),
 										glm::vec3(192.0f / 0xFF, 192.0f / 0xFF, 192.0f / 0xFF),
-										glm::vec3(-normal.x, -normal.y, normal.z),
+										glm::vec3(normal.x, normal.y, normal.z),
 										glm::vec2(0.0f, 0.0f)});
 					vertexOffset++;
 				}

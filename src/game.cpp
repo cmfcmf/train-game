@@ -1434,6 +1434,13 @@ void TrainGameApplication::drawFrame()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+glm::vec3 rotate(const glm::vec3 &vector, const float rotation, const glm::vec2 &origin) {
+	auto mat = glm::translate(glm::mat4(1.0f), glm::vec3(-origin.x, -origin.y, 0.0));
+	mat = glm::rotate(mat, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+	mat = glm::translate(mat, glm::vec3(origin.x, origin.y, 0.0));
+	return glm::vec3(mat * glm::vec4(vector, 1.0f));
+}
+
 void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
 {
 	static auto lastTime = std::chrono::high_resolution_clock::now();
@@ -1441,52 +1448,18 @@ void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
 	const float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
 	lastTime = currentTime;
 
-	const auto rotateLeft = keyboard.isPressed(GLFW_KEY_Q);
-	const auto rotateRight = keyboard.isPressed(GLFW_KEY_E);
-	int direction = 0;
-	if (rotateLeft && !rotateRight)
-	{
-		direction = -1;
-	}
-	else if (rotateRight && !rotateLeft)
-	{
-		direction = 1;
-	}
-
 	static auto rotation = 0.0f;
-	rotation += glm::radians(90.0f) * delta * direction * -1;
+	const auto rotationDirection = keyboard.isOnePressed(GLFW_KEY_Q, GLFW_KEY_E);
+	rotation += glm::radians(90.0f) * delta * rotationDirection;
 
-
-	static auto cameraPosition = glm::vec3(_initialCameraPosition.x, _initialCameraPosition.y, 70.0f);
+	static auto cameraPosition = glm::vec3(0.0f, 0.0f, 100.0f);
 	const auto zoom = cameraPosition.z;
 
 	{
-		int horizontalTranslation = 0;
-		int verticalTranslation = 0;
-		const auto forward = keyboard.isPressed(GLFW_KEY_W);
-		const auto backward = keyboard.isPressed(GLFW_KEY_S);
-		const auto left = keyboard.isPressed(GLFW_KEY_A);
-		const auto right = keyboard.isPressed(GLFW_KEY_D);
-
-		if (forward && !backward)
-		{
-			verticalTranslation = 1;
-		}
-		else if (!forward && backward)
-		{
-			verticalTranslation = -1;
-		}
-		if (left && !right)
-		{
-			horizontalTranslation = -1;
-		}
-		else if (!left && right)
-		{
-			horizontalTranslation = 1;
-		}
-
-		cameraPosition.x += 1.0f * delta * horizontalTranslation * -1 * zoom;
-		cameraPosition.y += 1.0f * delta * verticalTranslation * -1 * zoom;
+		const auto verticalTranslation = keyboard.isOnePressed(GLFW_KEY_W, GLFW_KEY_S);
+		const auto horizontalTranslation = keyboard.isOnePressed(GLFW_KEY_D, GLFW_KEY_A);
+		cameraPosition.x += 1.0f * delta * horizontalTranslation * zoom;
+		cameraPosition.y += 1.0f * delta * verticalTranslation * zoom;
 	}
 	{
 		const auto scroll = keyboard.getScrollOffset();
@@ -1501,15 +1474,19 @@ void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
 	title.append(" FPS");
 	glfwSetWindowTitle(window, title.c_str());
 
+
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(-368000, -5806000, 0));
 	ubo.view = glm::lookAt(
-		cameraPosition, // eye
-		glm::vec3(cameraPosition.x, cameraPosition.y - 120.0f, 0.0f), // center
+		glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z), // eye
+		// TODO: Rotation is not working correctly
+		rotate(glm::vec3(cameraPosition.x, cameraPosition.y + 100.0f, 0.0f), rotation, glm::vec2(cameraPosition.x, cameraPosition.y)), // look at
 		glm::vec3(0.0f, 0.0f, 1.0f) // up
 	);
 
-	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10000.0f);
+	std::cout << cameraPosition.x << ", " << cameraPosition.y << ", " << cameraPosition.z << std::endl;
+
+	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / static_cast<float>(swapChainExtent.height), 0.01f, 10000.0f);
 	ubo.proj[1][1] *= -1;
 
 	void *data;

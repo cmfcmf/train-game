@@ -10,6 +10,7 @@ public:
 	void begin(GLFWwindow *window);
 	void addTrackedKey(int key);
 	bool isPressed(int key) const;
+	int isOnePressed(int key1, int key2) const;
 	double getScrollOffset() const;
 	void resetScrollOffset();
 

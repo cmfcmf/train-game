@@ -18,6 +18,20 @@ bool Keyboard::isPressed(int key) const
 	return trackedKeys.at(key);
 }
 
+int Keyboard::isOnePressed(int key1, int key2) const {
+	const auto pressed1 = isPressed(key1);
+	const auto pressed2 = isPressed(key2);
+
+	if (pressed1 && !pressed2) {
+		return 1;
+	}
+	if (pressed2 && !pressed1) {
+		return -1;
+	}
+	return 0;
+}
+
+
 double Keyboard::getScrollOffset() const
 {
 	return scrollOffset;

@@ -134,6 +134,9 @@ int main()
 {
 	std::cout << "TrainGame " << TrainGame_VERSION_MAJOR << "." << TrainGame_VERSION_MINOR << "." << TrainGame_VERSION_PATCH << std::endl;
 
+	// https://fbinter.stadt-berlin.de/fb/wms/senstadt/k_luftbild2019_rgb?service=wms&request=GetMap&layers=0&styles=default&srs=EPSG:25833&bbox=373000,5810000,374000,5812000&width=5000&height=5000&format=image/jpeg
+	// https://fbinter.stadt-berlin.de/fb/wms/senstadt/k_dgm1/?service=wms&request=GetMap&layers=1&styles=default&srs=EPSG:25833&bbox=373000,5810000,374000,5812000&width=5000&height=5000&format=image/jpeg
+
 	const auto minX = 368000.0f;
 	const auto minY = 5806000.0f;
 	const auto extent = 2000;
@@ -148,7 +151,7 @@ int main()
 
 	const auto x = static_cast<size_t>(minX / 1000.0f);
 	const auto y = static_cast<size_t>(minY / 1000.0f);
-	const auto initialCameraPosition = glm::vec2(-minX, -minY);
+	const auto initialCameraPosition = glm::vec2(minX, minY);
 
 	const auto osmFilePath = "datasets/osm/brandenburg-latest.osm.pbf";
 	osmium::io::Reader osmReader{osmFilePath, osmium::osm_entity_bits::node | osmium::osm_entity_bits::way};
@@ -171,9 +174,9 @@ int main()
 		float z = heightData[i];
 
 		Vertex vertex = {
-			{-x, -y, z},
+			{x, y, z},
 			{0.373f, 0.608f, 0.106f},
-			{0.0f, 0.0f, 0.0f},
+			{0.0f, 0.0f, 1.0f},
 			{0.0f, 0.0f}};
 		const auto color = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 		vertex.color *= 1.0f - 0.05f + (0.10 * color);
@@ -233,7 +236,7 @@ int main()
 			const auto color = glm::vec3(1.0f, randomBetween0And1(), 0.0f);
 			for (const auto &position : positions) {
 				vertices.push_back({
-					{-position.x, -position.y, 35},
+					{position.x, position.y, 35},
 					color,
 					{0.0f, 0.0f, 1.0f},
 					{0.0f, 0.0f}
