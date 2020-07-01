@@ -23,6 +23,7 @@ add_executable(TrainGame
 	src/main.cpp
 	src/rendered_object.cpp
 	src/osm_element.cpp
+	src/stb_image.cpp
 	src/util.cpp
 	src/xyz_reader.cpp
 )
@@ -31,7 +32,7 @@ target_include_directories(TrainGame PUBLIC
                            "${PROJECT_BINARY_DIR}"
 						  )
 
-add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE)
+add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DSTBI_ONLY_JPEG)
 
 target_compile_options(TrainGame PRIVATE -Wall -Wextra -pedantic -Werror)
 

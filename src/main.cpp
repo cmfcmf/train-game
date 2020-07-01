@@ -3,10 +3,6 @@
 #include <algorithm>
 #include <map>
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_JPEG
-#include <stb_image.h>
-
 #include <osmium/handler.hpp>
 #include <osmium/io/pbf_input.hpp>
 #include <osmium/visitor.hpp>
