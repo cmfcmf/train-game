@@ -9,6 +9,8 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "spdlog/spdlog.h"
+
 template<typename T, typename F>
 class Loader
 {
@@ -23,8 +25,7 @@ public:
 			const auto zipName = std::regex_replace(getZipName(), std::regex("\\{\\}"), chunkId);
 			const std::filesystem::path zipPath = "datasets/" + getName() + "/zips/" + zipName;
 			if (!std::filesystem::exists(zipPath)) {
-				// Download
-				std::cout << "File " << zipName << " needs to be downloaded." << std::endl;
+				spdlog::warn("File {} needs to be downloaded.", zipName);
 				const auto success = download(getDownloadUrl() + zipName, zipPath);
 				if (!success) {
 					// No data available
@@ -35,19 +36,16 @@ public:
 			const auto rawName = std::regex_replace(getRawName(), std::regex("\\{\\}"), chunkId);
 			const std::filesystem::path rawPath = "datasets/" + getName() + "/raw/" + rawName;
 			if (!std::filesystem::exists(rawPath)) {
-				// Unzip
-				std::cout << "File " << rawName << " needs to be unzipped." << std::endl;
+				spdlog::warn("File {} needs to be unzipped.", rawName);
 				unzip(zipPath, rawPath.parent_path(), rawName);
 			}
 
 			const auto filename = rawPath;
-
-			F rawData;
-			if (_cache.contains(filename)) {
-				rawData = _cache.at(filename);
-			} else {
-				rawData = parseFile(filename);
+			if (!_cache.contains(filename)) {
+				spdlog::debug("Loading and parsing file {}.", filename.string());
+				_cache.insert({filename, parseFile(filename)});
 			}
+			const F rawData = _cache.at(filename);
 
 			loadChunk(result, rawData, chunkOrigin.first, chunkOrigin.second, requestedX, requestedY, extent);
 		}
@@ -98,7 +96,7 @@ protected:
 	}
 
 	bool execute(std::string command) {
-		std::cout << "Executing command: " << command << std::endl;
+		spdlog::debug("Executing command: {}", command);
 		return 0 == std::system(command.c_str());
 	}
 };

@@ -39,3 +39,19 @@ struct SwapChainSupportDetails
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };
+
+float randomBetween0And1();
+
+template<typename T>
+inline T floorToMultipleOf(const T value, const T multiple)
+{
+	const T diff = value % multiple;
+	return value - diff;
+}
+
+template<typename T>
+inline T ceilToMultipleOf(const T value, const T multiple)
+{
+	const T diff = (multiple - (value % multiple)) % multiple;
+	return value + diff;
+}

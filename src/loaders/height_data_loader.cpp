@@ -13,12 +13,9 @@ void HeightDataLoader::loadChunk(HeightDataLoaderResult &result, const HeightDat
 	for (const auto &[absoluteX, absoluteY, z] : rawData) {
 		const std::int32_t x = static_cast<std::int32_t>(absoluteX) - requestedX;
 		const std::int32_t y = static_cast<std::int32_t>(absoluteY) - requestedY;
-		if (x < 0 || y < 0) {
+		if (x < 0 || y < 0 || x > extent || y > extent) {
 			continue;
 		}
-		if (x > extent || y > extent) {
-			continue;
-		}
-		result[x + y * (extent + 1)] = z;
+		result.at(x + y * (extent + 1)) = z;
 	}
 }

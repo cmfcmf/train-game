@@ -2,13 +2,14 @@
 
 #include <iostream>
 #include <fstream>
-#include <time.h>
 #include <algorithm>
+
 #include <citygml/citygml.h>
 #include <citygml/citymodel.h>
 #include <citygml/cityobject.h>
 #include <citygml/geometry.h>
 #include <citygml/polygon.h>
+#include "spdlog/spdlog.h"
 
 void gatherGeometries(std::vector<citygml::Geometry> &geometries, const citygml::Geometry &geometry) {
 	geometries.push_back(geometry);
@@ -21,7 +22,7 @@ void gatherGeometries(std::vector<citygml::Geometry> &geometries, const citygml:
 
 std::pair<std::vector<Vertex>, std::vector<uint32_t>> CityGMLReader::read() const
 {
-	std::cout << "Loading file " << _filename << std::endl;
+	spdlog::debug("Loading file {}", _filename);
 	citygml::ParserParams params;
 
 	std::shared_ptr<const citygml::CityModel> city;
@@ -45,7 +46,7 @@ std::pair<std::vector<Vertex>, std::vector<uint32_t>> CityGMLReader::read() cons
 		{
 			continue;
 		}
-		std::cout << object->getId() << " : " << object->getGeometriesCount() << std::endl;
+		spdlog::trace("{}: {}", object->getId(), object->getGeometriesCount());
 
 		std::vector<citygml::Geometry> geometries;
 

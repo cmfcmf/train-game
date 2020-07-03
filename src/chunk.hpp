@@ -15,6 +15,7 @@
 #include "rendered_object.hpp"
 
 typedef glm::vec<2, std::uint32_t, glm::defaultp> Vec2Uint32;
+typedef std::tuple<uint32_t, uint32_t, uint16_t> ChunkID;
 
 class Chunk
 {
@@ -47,6 +48,10 @@ public:
 
 	const std::vector<RenderedObject>& getRenderedObjects() const {
 		return m_renderedObjects;
+	}
+
+	const ChunkID getId() const {
+		return std::make_tuple(_origin.x, _origin.y, _extent);
 	}
 
 	void transformHeightData();

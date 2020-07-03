@@ -1,5 +1,5 @@
 #include "keyboard.hpp"
-#include "game.hpp"
+#include "app.hpp"
 #include "util.hpp"
 
 void Keyboard::begin(GLFWwindow *window)
@@ -44,7 +44,7 @@ void Keyboard::resetScrollOffset()
 
 void Keyboard::key_callback(GLFWwindow *window, int key, __attribute__((unused)) int scancode, int action, __attribute__((unused)) int mods)
 {
-	auto &keyboard = TrainGameApplication::fromWindow(window)->keyboard;
+	auto &keyboard = App::fromWindow(window)->keyboard;
 	auto entry = keyboard.trackedKeys.find(key);
 	if (entry != keyboard.trackedKeys.end())
 	{
@@ -61,6 +61,6 @@ void Keyboard::key_callback(GLFWwindow *window, int key, __attribute__((unused))
 
 void Keyboard::scroll_callback(GLFWwindow *window, __attribute__((unused)) double xoffset, double yoffset)
 {
-	auto &keyboard = TrainGameApplication::fromWindow(window)->keyboard;
+	auto &keyboard = App::fromWindow(window)->keyboard;
 	keyboard.scrollOffset += yoffset;
 }

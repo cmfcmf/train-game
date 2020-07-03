@@ -1,5 +1,6 @@
 #include "chunk.hpp"
 #include <cassert>
+#include "spdlog/spdlog.h"
 
 void adjustNormal(std::vector<Vertex> &vertices, size_t a, size_t b, size_t c)
 {
@@ -17,12 +18,20 @@ void adjustNormal(std::vector<Vertex> &vertices, size_t a, size_t b, size_t c)
 }
 
 void Chunk::load(HeightDataLoader &heightDataLoader, SateliteImageLoader &sateliteImageLoader, BuildingsLoader &buildingsLoader) {
+	spdlog::info("Chunk loading started.");
+
+	spdlog::debug("Loading height data.");
 	heightData = heightDataLoader.load(_origin.x, _origin.y, _extent);
+	spdlog::debug("Loading satelite image data.");
 	sateliteImage = sateliteImageLoader.load(_origin.x, _origin.y, _extent);
+	spdlog::debug("Loading buildings data.");
 	buildings = buildingsLoader.load(_origin.x, _origin.y, _extent);
 
+	spdlog::debug("Transforming data.");
 	transformHeightData();
 	transformBuildings();
+
+	spdlog::info("Chunk loading finished.");
 }
 
 void Chunk::transformHeightData()

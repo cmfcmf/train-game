@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "renderer.hpp"
 
 #include <numeric>
 
@@ -48,20 +48,19 @@ static std::vector<char> readFile(const std::string &filename)
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-TrainGameApplication *TrainGameApplication::fromWindow(GLFWwindow *window)
+
+void Renderer::setRenderedObjects(const std::vector<RenderedObject> &renderedObjects)
 {
-	return reinterpret_cast<TrainGameApplication *>(glfwGetWindowUserPointer(window));
+	m_renderedObjects = renderedObjects;
+	// TODO: Update buffers
 }
 
-void TrainGameApplication::run()
+void Renderer::setCameraMatrix(const glm::mat4 &mat)
 {
-	initWindow();
-	initVulkan();
-	mainLoop();
-	cleanup();
+	m_cameraMatrix = mat;
 }
 
-void TrainGameApplication::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
+void Renderer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
 {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -70,33 +69,7 @@ void TrainGameApplication::populateDebugMessengerCreateInfo(VkDebugUtilsMessenge
 	createInfo.pfnUserCallback = debugCallback;
 }
 
-void TrainGameApplication::initWindow()
-{
-	glfwInit();
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-	window = glfwCreateWindow(WIDTH, HEIGHT, "TrainGame", nullptr, nullptr);
-	glfwSetWindowUserPointer(window, this);
-	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-
-	keyboard.begin(window);
-	keyboard.addTrackedKey(GLFW_KEY_Q);
-	keyboard.addTrackedKey(GLFW_KEY_E);
-
-	keyboard.addTrackedKey(GLFW_KEY_W);
-	keyboard.addTrackedKey(GLFW_KEY_A);
-	keyboard.addTrackedKey(GLFW_KEY_S);
-	keyboard.addTrackedKey(GLFW_KEY_D);
-}
-
-void TrainGameApplication::framebufferResizeCallback(GLFWwindow *window, __attribute__((unused)) int width, __attribute__((unused)) int height)
-{
-	auto app = fromWindow(window);
-	app->framebufferResized = true;
-}
-
-void TrainGameApplication::initVulkan()
+void Renderer::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
@@ -122,7 +95,7 @@ void TrainGameApplication::initVulkan()
 	createSyncObjects();
 }
 
-void TrainGameApplication::createInstance()
+void Renderer::createInstance()
 {
 	if (enableValidationLayers && !checkValidationLayerSupport())
 	{
@@ -169,7 +142,7 @@ void TrainGameApplication::createInstance()
 	printAvailableExtensions();
 }
 
-std::vector<const char *> TrainGameApplication::getRequiredExtensions()
+std::vector<const char *> Renderer::getRequiredExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions;
@@ -185,7 +158,7 @@ std::vector<const char *> TrainGameApplication::getRequiredExtensions()
 	return extensions;
 }
 
-void TrainGameApplication::printAvailableExtensions()
+void Renderer::printAvailableExtensions()
 {
 	uint32_t extensionCount = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -199,7 +172,7 @@ void TrainGameApplication::printAvailableExtensions()
 	}
 }
 
-bool TrainGameApplication::checkValidationLayerSupport()
+bool Renderer::checkValidationLayerSupport()
 {
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -230,7 +203,7 @@ bool TrainGameApplication::checkValidationLayerSupport()
 	return true;
 }
 
-void TrainGameApplication::setupDebugMessenger()
+void Renderer::setupDebugMessenger()
 {
 	if (!enableValidationLayers)
 		return;
@@ -244,15 +217,15 @@ void TrainGameApplication::setupDebugMessenger()
 	}
 }
 
-void TrainGameApplication::createSurface()
+void Renderer::createSurface()
 {
-	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+	if (glfwCreateWindowSurface(instance, m_window.get(), nullptr, &surface) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create window surface!");
 	}
 }
 
-void TrainGameApplication::pickPhysicalDevice()
+void Renderer::pickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -278,7 +251,7 @@ void TrainGameApplication::pickPhysicalDevice()
 	}
 }
 
-bool TrainGameApplication::isDeviceSuitable(VkPhysicalDevice device)
+bool Renderer::isDeviceSuitable(VkPhysicalDevice device)
 {
 	/*
         VkPhysicalDeviceProperties deviceProperties;
@@ -308,7 +281,7 @@ bool TrainGameApplication::isDeviceSuitable(VkPhysicalDevice device)
 	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
-bool TrainGameApplication::checkDeviceExtensionSupport(VkPhysicalDevice device)
+bool Renderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -326,7 +299,7 @@ bool TrainGameApplication::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	return requiredExtensions.empty();
 }
 
-QueueFamilyIndices TrainGameApplication::findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices Renderer::findQueueFamilies(VkPhysicalDevice device)
 {
 	QueueFamilyIndices indices;
 
@@ -362,7 +335,7 @@ QueueFamilyIndices TrainGameApplication::findQueueFamilies(VkPhysicalDevice devi
 	return indices;
 }
 
-void TrainGameApplication::createLogicalDevice()
+void Renderer::createLogicalDevice()
 {
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
@@ -414,7 +387,7 @@ void TrainGameApplication::createLogicalDevice()
 	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
-SwapChainSupportDetails TrainGameApplication::querySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails Renderer::querySwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
 
@@ -441,7 +414,7 @@ SwapChainSupportDetails TrainGameApplication::querySwapChainSupport(VkPhysicalDe
 	return details;
 }
 
-VkSurfaceFormatKHR TrainGameApplication::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+VkSurfaceFormatKHR Renderer::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
 {
 	for (const auto &availableFormat : availableFormats)
 	{
@@ -454,7 +427,7 @@ VkSurfaceFormatKHR TrainGameApplication::chooseSwapSurfaceFormat(const std::vect
 	return availableFormats[0];
 }
 
-VkPresentModeKHR TrainGameApplication::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+VkPresentModeKHR Renderer::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
 {
 	for (const auto &availablePresentMode : availablePresentModes)
 	{
@@ -467,7 +440,7 @@ VkPresentModeKHR TrainGameApplication::chooseSwapPresentMode(const std::vector<V
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D TrainGameApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
+VkExtent2D Renderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
 {
 	if (capabilities.currentExtent.width != UINT32_MAX)
 	{
@@ -476,7 +449,7 @@ VkExtent2D TrainGameApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR
 	else
 	{
 		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
+		glfwGetFramebufferSize(m_window.get(), &width, &height);
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(width),
@@ -489,7 +462,7 @@ VkExtent2D TrainGameApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR
 	}
 }
 
-void TrainGameApplication::createSwapChain()
+void Renderer::createSwapChain()
 {
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
@@ -547,7 +520,7 @@ void TrainGameApplication::createSwapChain()
 	swapChainExtent = extent;
 }
 
-void TrainGameApplication::createImageViews()
+void Renderer::createImageViews()
 {
 	swapChainImageViews.resize(swapChainImages.size());
 
@@ -557,7 +530,7 @@ void TrainGameApplication::createImageViews()
 	}
 }
 
-void TrainGameApplication::createRenderPass()
+void Renderer::createRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapChainImageFormat;
@@ -607,7 +580,7 @@ void TrainGameApplication::createRenderPass()
 	}
 }
 
-void TrainGameApplication::createDescriptorSetLayout()
+void Renderer::createDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
@@ -636,7 +609,7 @@ void TrainGameApplication::createDescriptorSetLayout()
 	}
 }
 
-void TrainGameApplication::createGraphicsPipeline()
+void Renderer::createGraphicsPipeline()
 {
 	auto vertShaderCode = readFile("shaders/vert.spv");
 	auto fragShaderCode = readFile("shaders/frag.spv");
@@ -779,7 +752,7 @@ void TrainGameApplication::createGraphicsPipeline()
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 }
 
-VkShaderModule TrainGameApplication::createShaderModule(const std::vector<char> &code)
+VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
 {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -795,7 +768,7 @@ VkShaderModule TrainGameApplication::createShaderModule(const std::vector<char> 
 	return shaderModule;
 }
 
-void TrainGameApplication::createFramebuffers()
+void Renderer::createFramebuffers()
 {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
@@ -819,7 +792,7 @@ void TrainGameApplication::createFramebuffers()
 	}
 }
 
-void TrainGameApplication::createCommandPool()
+void Renderer::createCommandPool()
 {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
@@ -834,8 +807,8 @@ void TrainGameApplication::createCommandPool()
 	}
 }
 
-void TrainGameApplication::createTextureImage() {
-	const auto pixels = m_renderedObjects[0].getTexture(); // FIXME
+void Renderer::createTextureImage() {
+	const auto pixels = m_renderedObjects[1].getTexture(); // FIXME
 
 	int texWidth = std::sqrt(pixels.size());
 	int texHeight = std::sqrt(pixels.size());
@@ -860,11 +833,11 @@ void TrainGameApplication::createTextureImage() {
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void TrainGameApplication::createTextureImageView() {
+void Renderer::createTextureImageView() {
 	textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
-void TrainGameApplication::createTextureSampler() {
+void Renderer::createTextureSampler() {
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -892,7 +865,7 @@ void TrainGameApplication::createTextureSampler() {
     }
 }
 
-VkImageView TrainGameApplication::createImageView(VkImage image, VkFormat format) {
+VkImageView Renderer::createImageView(VkImage image, VkFormat format) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
@@ -912,7 +885,7 @@ VkImageView TrainGameApplication::createImageView(VkImage image, VkFormat format
     return imageView;
 }
 
-void TrainGameApplication::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+void Renderer::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
 	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -948,7 +921,7 @@ void TrainGameApplication::createImage(uint32_t width, uint32_t height, VkFormat
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void TrainGameApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
 {
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -977,7 +950,7 @@ void TrainGameApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags us
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void TrainGameApplication::transitionImageLayout(VkImage image, __attribute__((unused)) VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+void Renderer::transitionImageLayout(VkImage image, __attribute__((unused)) VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
 	VkImageMemoryBarrier barrier{};
@@ -1026,7 +999,7 @@ void TrainGameApplication::transitionImageLayout(VkImage image, __attribute__((u
     endSingleTimeCommands(commandBuffer);
 }
 
-void TrainGameApplication::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
 	VkBufferImageCopy region{};
@@ -1058,7 +1031,7 @@ void TrainGameApplication::copyBufferToImage(VkBuffer buffer, VkImage image, uin
     endSingleTimeCommands(commandBuffer);
 }
 
-void TrainGameApplication::createVertexBuffer()
+void Renderer::createVertexBuffer()
 {
 	const uint64_t vertexCount = std::accumulate(m_renderedObjects.begin(), m_renderedObjects.end(), 0,
 		[](auto count, const auto &renderedObject){ return count + renderedObject.getVertices().size(); });
@@ -1086,7 +1059,7 @@ void TrainGameApplication::createVertexBuffer()
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void TrainGameApplication::createIndexBuffer()
+void Renderer::createIndexBuffer()
 {
 	const uint64_t indexCount = std::accumulate(m_renderedObjects.begin(), m_renderedObjects.end(), 0,
 		[](auto count, const auto &renderedObject){ return count + renderedObject.getIndices().size(); });
@@ -1114,7 +1087,7 @@ void TrainGameApplication::createIndexBuffer()
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void TrainGameApplication::createUniformBuffers()
+void Renderer::createUniformBuffers()
 {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
@@ -1127,7 +1100,7 @@ void TrainGameApplication::createUniformBuffers()
 	}
 }
 
-VkCommandBuffer TrainGameApplication::beginSingleTimeCommands() {
+VkCommandBuffer Renderer::beginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1146,7 +1119,7 @@ VkCommandBuffer TrainGameApplication::beginSingleTimeCommands() {
     return commandBuffer;
 }
 
-void TrainGameApplication::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void Renderer::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -1160,7 +1133,7 @@ void TrainGameApplication::endSingleTimeCommands(VkCommandBuffer commandBuffer) 
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void TrainGameApplication::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void Renderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -1171,7 +1144,7 @@ void TrainGameApplication::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, Vk
     endSingleTimeCommands(commandBuffer);
 }
 
-uint32_t TrainGameApplication::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t Renderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -1187,7 +1160,7 @@ uint32_t TrainGameApplication::findMemoryType(uint32_t typeFilter, VkMemoryPrope
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void TrainGameApplication::createDescriptorPool()
+void Renderer::createDescriptorPool()
 {
 	std::array<VkDescriptorPoolSize, 2> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1207,7 +1180,7 @@ void TrainGameApplication::createDescriptorPool()
 	}
 }
 
-void TrainGameApplication::createDescriptorSets()
+void Renderer::createDescriptorSets()
 {
 	std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocInfo{};
@@ -1255,7 +1228,7 @@ void TrainGameApplication::createDescriptorSets()
 	}
 }
 
-void TrainGameApplication::createCommandBuffers()
+void Renderer::createCommandBuffers()
 {
 	commandBuffers.resize(swapChainFramebuffers.size());
 
@@ -1309,7 +1282,14 @@ void TrainGameApplication::createCommandBuffers()
 		size_t indexOffset = 0;
 		size_t vertexOffset = 0;
 		for (const auto &renderedObject : m_renderedObjects) {
-			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(renderedObject.getIndices().size()), 1, indexOffset, vertexOffset, 0);
+			vkCmdDrawIndexed(
+				commandBuffers[i],
+				static_cast<uint32_t>(renderedObject.getIndices().size()),
+				1, // instance count
+				indexOffset,
+				vertexOffset,
+				0 // instance offset
+			);
 			indexOffset += renderedObject.getIndices().size();
 			vertexOffset += renderedObject.getVertices().size();
 		}
@@ -1323,7 +1303,7 @@ void TrainGameApplication::createCommandBuffers()
 	}
 }
 
-void TrainGameApplication::createSyncObjects()
+void Renderer::createSyncObjects()
 {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1349,13 +1329,13 @@ void TrainGameApplication::createSyncObjects()
 	}
 }
 
-void TrainGameApplication::recreateSwapChain()
+void Renderer::recreateSwapChain()
 {
 	int width = 0, height = 0;
-	glfwGetFramebufferSize(window, &width, &height);
+	glfwGetFramebufferSize(m_window.get(), &width, &height);
 	while (width == 0 || height == 0)
 	{
-		glfwGetFramebufferSize(window, &width, &height);
+		glfwGetFramebufferSize(m_window.get(), &width, &height);
 		glfwWaitEvents();
 	}
 
@@ -1372,19 +1352,7 @@ void TrainGameApplication::recreateSwapChain()
 	createCommandBuffers();
 }
 
-void TrainGameApplication::mainLoop()
-{
-	while (!glfwWindowShouldClose(window))
-	{
-		glfwPollEvents();
-
-		drawFrame();
-	}
-
-	vkDeviceWaitIdle(device);
-}
-
-void TrainGameApplication::drawFrame()
+void Renderer::drawFrame()
 {
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -1459,58 +1427,11 @@ void TrainGameApplication::drawFrame()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-glm::vec3 rotate(const glm::vec3 &vector, const float rotation, const glm::vec2 &origin) {
-	auto mat = glm::translate(glm::mat4(1.0f), glm::vec3(-origin.x, -origin.y, 0.0));
-	mat = glm::rotate(mat, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
-	mat = glm::translate(mat, glm::vec3(origin.x, origin.y, 0.0));
-	return glm::vec3(mat * glm::vec4(vector, 1.0f));
-}
-
-void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
+void Renderer::updateUniformBuffer(uint32_t currentImage)
 {
-	static auto lastTime = std::chrono::high_resolution_clock::now();
-	const auto currentTime = std::chrono::high_resolution_clock::now();
-	const float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
-	lastTime = currentTime;
-
-	static auto rotation = 0.0f;
-	const auto rotationDirection = keyboard.isOnePressed(GLFW_KEY_Q, GLFW_KEY_E);
-	rotation += glm::radians(90.0f) * delta * rotationDirection;
-
-	static auto cameraPosition = glm::vec3(0.0f, 0.0f, 100.0f);
-	const auto zoom = cameraPosition.z;
-
-	{
-		const auto verticalTranslation = keyboard.isOnePressed(GLFW_KEY_W, GLFW_KEY_S);
-		const auto horizontalTranslation = keyboard.isOnePressed(GLFW_KEY_D, GLFW_KEY_A);
-		cameraPosition.x += 1.0f * delta * horizontalTranslation * zoom;
-		cameraPosition.y += 1.0f * delta * verticalTranslation * zoom;
-	}
-	{
-		const auto scroll = keyboard.getScrollOffset();
-		keyboard.resetScrollOffset();
-		const auto zChange = zoom * delta * scroll * -1;
-		cameraPosition.z = std::max(0.1, cameraPosition.z + zChange);
-		//cameraPosition.y += zChange;
-	}
-
-	std::string title = "TrainGame ";
-	title.append(std::to_string(static_cast<uint16_t>(std::round(1.0f / delta))));
-	title.append(" FPS");
-	glfwSetWindowTitle(window, title.c_str());
-
-
 	UniformBufferObject ubo{};
-	ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(-368000, -5806000, 0));
-	ubo.view = glm::lookAt(
-		glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z), // eye
-		// TODO: Rotation is not working correctly
-		rotate(glm::vec3(cameraPosition.x, cameraPosition.y + 100.0f, 0.0f), rotation, glm::vec2(cameraPosition.x, cameraPosition.y)), // look at
-		glm::vec3(0.0f, 0.0f, 1.0f) // up
-	);
-
-	std::cout << cameraPosition.x << ", " << cameraPosition.y << ", " << cameraPosition.z << std::endl;
-
+	ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(-368000, -5806000, 0)); // FIXME
+	ubo.view = m_cameraMatrix;
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / static_cast<float>(swapChainExtent.height), 0.01f, 10000.0f);
 	ubo.proj[1][1] *= -1;
 
@@ -1520,8 +1441,10 @@ void TrainGameApplication::updateUniformBuffer(uint32_t currentImage)
 	vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
 }
 
-void TrainGameApplication::cleanup()
+void Renderer::cleanup()
 {
+	vkDeviceWaitIdle(device);
+
 	cleanupSwapChain();
 
     vkDestroySampler(device, textureSampler, nullptr);
@@ -1559,13 +1482,9 @@ void TrainGameApplication::cleanup()
 
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
-
-	glfwDestroyWindow(window);
-
-	glfwTerminate();
 }
 
-void TrainGameApplication::cleanupSwapChain()
+void Renderer::cleanupSwapChain()
 {
 	for (size_t i = 0; i < swapChainImages.size(); i++)
 	{
@@ -1600,7 +1519,7 @@ void TrainGameApplication::cleanupSwapChain()
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL TrainGameApplication::debugCallback(
+VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::debugCallback(
 	__attribute__((unused)) VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	__attribute__((unused)) VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,

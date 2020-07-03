@@ -43,3 +43,8 @@ bool QueueFamilyIndices::isComplete()
 {
 	return graphicsFamily.has_value() && presentFamily.has_value();
 }
+
+float randomBetween0And1()
+{
+	return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+}

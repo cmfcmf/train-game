@@ -12,6 +12,7 @@
 #include <fstream>
 #include <chrono>
 #include <map>
+#include <memory>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -22,24 +23,20 @@
 #include "util.hpp"
 #include "rendered_object.hpp"
 
-class TrainGameApplication
+class Renderer
 {
 public:
-	TrainGameApplication(const std::vector<RenderedObject> &renderedObjects, const glm::vec2 initialCameraPosition)
-		: m_renderedObjects{renderedObjects}, _initialCameraPosition{initialCameraPosition} {}
+	Renderer(std::shared_ptr<GLFWwindow> window) : m_window{window} {}
+	void initVulkan();
+	void drawFrame();
+	void cleanup();
+	bool framebufferResized = false;
 
-	void run();
-	Keyboard keyboard;
-
-	static TrainGameApplication *fromWindow(GLFWwindow *window);
-
+	void setRenderedObjects(const std::vector<RenderedObject> &renderedObjects);
+	void setCameraMatrix(const glm::mat4&);
 private:
-	const uint32_t WIDTH = 800;
-	const uint32_t HEIGHT = 600;
-
-	const std::vector<RenderedObject> m_renderedObjects;
-
-	const glm::vec2 _initialCameraPosition;
+	std::vector<RenderedObject> m_renderedObjects;
+	glm::mat4 m_cameraMatrix;
 
 	const std::vector<const char *> validationLayers = {
 		"VK_LAYER_KHRONOS_validation"};
@@ -55,7 +52,7 @@ private:
 	const bool enableValidationLayers = true;
 #endif
 
-	GLFWwindow *window;
+	std::shared_ptr<GLFWwindow> m_window;
 
 	VkInstance instance;
 	VkSurfaceKHR surface;
@@ -103,16 +100,7 @@ private:
 	std::vector<VkFence> imagesInFlight;
 	size_t currentFrame = 0;
 
-	bool framebufferResized = false;
-
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
-
-	void initWindow();
-
-	static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-	static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
-
-	void initVulkan();
 
 	void createInstance();
 
@@ -198,13 +186,7 @@ private:
 
 	void recreateSwapChain();
 
-	void mainLoop();
-
-	void drawFrame();
-
 	void updateUniformBuffer(uint32_t currentImage);
-
-	void cleanup();
 
 	void cleanupSwapChain();
 

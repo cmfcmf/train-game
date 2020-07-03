@@ -15,14 +15,16 @@ add_executable(TrainGame
 	src/loaders/height_data_loader.cpp
 	src/loaders/satelite_image_loader.cpp
 	src/loaders/buildings_loader.cpp
+	src/app.cpp
 	src/chunk.cpp
 	src/citygml_reader.cpp
 	src/coordinate_helper.cpp
-	src/game.cpp
 	src/keyboard.cpp
 	src/main.cpp
 	src/rendered_object.cpp
+	src/renderer.cpp
 	src/osm_element.cpp
+	src/osm_loader.cpp
 	src/stb_image.cpp
 	src/util.cpp
 	src/xyz_reader.cpp
@@ -68,3 +70,6 @@ include_directories(${CITYGML_INCLUDE_DIR})
 
 # stb
 include_directories(SYSTEM vendor/stb)
+
+# spdlog
+include_directories(SYSTEM vendor/spdlog/include)
