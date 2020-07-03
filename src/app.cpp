@@ -26,9 +26,7 @@ void App::framebufferResizeCallback(GLFWwindow *window, __attribute__((unused)) 
 	app->renderer->framebufferResized = true;
 }
 
-std::vector<ChunkID> App::calculateRequiredChunkIds()
-{	// FIXME: 20000000 index
- 	// FIXME: 5000000 vertex
+std::vector<ChunkID> App::calculateRequiredChunkIds() {
 	const uint32_t viewDistance = 500;
 
 	const glm::ivec2 bl(

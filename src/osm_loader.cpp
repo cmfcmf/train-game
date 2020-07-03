@@ -8,11 +8,13 @@
 #include <osmium/io/pbf_input.hpp>
 #include <osmium/visitor.hpp>
 #include <osmium/geom/factory.hpp>
+#include <spdlog/spdlog.h>
 
 #include "rendered_object.hpp"
 #include "osm_element.hpp"
 #include "util.hpp"
-#include "spdlog/spdlog.h"
+#include "exception.hpp"
+
 
 class MyOSMHandler : public osmium::handler::Handler
 {
@@ -29,7 +31,7 @@ public:
 	void node(const osmium::Node &node)
 	{
 		if (processedWay) {
-			throw std::runtime_error("Must process all nodes before processing ways");
+			throw_with_trace(std::runtime_error("Must process all nodes before processing ways"));
 		}
 		if (node.deleted())
 		{
@@ -75,7 +77,7 @@ public:
 			if (result != _nodes.end()) {
 				nodes.push_back(result->second);
 			} else {
-				throw std::runtime_error("Could not find node");
+				throw_with_trace(std::runtime_error("Could not find node"));
 			}
 		}
 		if (!nodes.empty()) {

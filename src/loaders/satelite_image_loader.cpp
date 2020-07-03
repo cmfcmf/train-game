@@ -3,11 +3,13 @@
 
 #include <stb_image.h>
 
+#include "../exception.hpp"
+
 SateliteImageLoaderRawData SateliteImageLoader::parseFile(const std::string &filename) const {
 	int texWidth, texHeight, texChannels;
     std::uint32_t* pixels = reinterpret_cast<std::uint32_t*>(stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha));
     if (!pixels) {
-        throw std::runtime_error("failed to load image: " + filename);
+        throw_with_trace(std::runtime_error("failed to load image: " + filename));
     }
 	assert(static_cast<std::uint32_t>(texWidth) == IMAGE_SIZE);
 	assert(static_cast<std::uint32_t>(texHeight) == IMAGE_SIZE);

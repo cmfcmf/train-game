@@ -9,7 +9,9 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
+
+#include "../exception.hpp"
 
 template<typename T, typename F>
 class Loader
@@ -87,7 +89,7 @@ protected:
 		const auto code = execute("unzip -o '" + archive.string() + + "' '" + filename + "' -d '" + destination.string() + "'");
 		if (code != 0 && code != 1) {
 			// exit code 1 still indicates successful extraction.
-			throw std::runtime_error("Command exited with a non-zero status code: " + std::to_string(code));
+			throw_with_trace(std::runtime_error("Command exited with a non-zero status code: " + std::to_string(code)));
 		}
 	}
 

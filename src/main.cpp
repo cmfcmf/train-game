@@ -1,6 +1,9 @@
 #include "main.hpp"
 
-#include "spdlog/spdlog.h"
+#include <ostream>
+
+#include <boost/stacktrace.hpp>
+#include <spdlog/spdlog.h>
 
 #include "app.hpp"
 #include "config.hpp"
@@ -19,6 +22,13 @@ int main()
 	{
 		spdlog::critical(e.what());
 		spdlog::dump_backtrace();
+		const boost::stacktrace::stacktrace* st = boost::get_error_info<traced>(e);
+		if (st) {
+			std::ostringstream os;
+			os << '\n' << *st;
+			spdlog::critical(os.str());
+	    }
+
 		return EXIT_FAILURE;
 	}
 

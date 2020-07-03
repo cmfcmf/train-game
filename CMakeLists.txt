@@ -34,7 +34,7 @@ target_include_directories(TrainGame PUBLIC
                            "${PROJECT_BINARY_DIR}"
 						  )
 
-add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DSTBI_ONLY_JPEG)
+add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DSTBI_ONLY_JPEG -DBOOST_STACKTRACE_USE_BACKTRACE)
 
 target_compile_options(TrainGame PRIVATE -Wall -Wextra -pedantic -Werror)
 
@@ -73,3 +73,9 @@ include_directories(SYSTEM vendor/stb)
 
 # spdlog
 include_directories(SYSTEM vendor/spdlog/include)
+
+# Boost
+find_package(Boost 1.71 COMPONENTS stacktrace_basic stacktrace_backtrace REQUIRED)
+target_link_libraries(TrainGame
+	${Boost_STACKTRACE_BACKTRACE_LIBRARY}
+	dl)

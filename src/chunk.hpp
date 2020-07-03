@@ -22,13 +22,13 @@ class Chunk
 public:
 	Chunk(Vec2Uint32 origin, std::uint16_t extent) : _origin{origin}, _extent{extent} {
 		if (origin.x % 100 != 0) {
-			throw std::runtime_error("origin.x must be a multiple of 100.");
+			throw_with_trace(std::runtime_error("origin.x must be a multiple of 100."));
 		}
 		if (origin.y % 100 != 0) {
-			throw std::runtime_error("origin.y must be a multiple of 100.");
+			throw_with_trace(std::runtime_error("origin.y must be a multiple of 100."));
 		}
 		if (extent % 100 != 0) {
-			throw std::runtime_error("extent must be a multiple of 100.");
+			throw_with_trace(std::runtime_error("extent must be a multiple of 100."));
 		}
 	}
 

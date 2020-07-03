@@ -9,7 +9,9 @@
 #include <citygml/cityobject.h>
 #include <citygml/geometry.h>
 #include <citygml/polygon.h>
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
+
+#include "exception.hpp"
 
 void gatherGeometries(std::vector<citygml::Geometry> &geometries, const citygml::Geometry &geometry) {
 	geometries.push_back(geometry);
@@ -32,7 +34,7 @@ std::pair<std::vector<Vertex>, std::vector<uint32_t>> CityGMLReader::read() cons
 	}
 	catch (const std::runtime_error &e)
 	{
-		throw std::runtime_error("Could not parse file " + _filename);
+		throw_with_trace(std::runtime_error("Could not parse file " + _filename));
 	}
 
 	std::vector<Vertex> vertices;
