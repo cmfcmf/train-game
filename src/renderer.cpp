@@ -53,7 +53,9 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 void Renderer::setRenderedObjects(const std::vector<RenderedObject> &renderedObjects)
 {
 	m_renderedObjects = renderedObjects;
-	// TODO: Update buffers
+	updateVertexBuffer();
+	updateIndexBuffer();
+	updateTextureImage();
 }
 
 void Renderer::setCameraMatrix(const glm::mat4 &mat)
@@ -804,16 +806,26 @@ void Renderer::createCommandPool()
 
 	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to create command pool!");
+		throw_with_trace(std::runtime_error("failed to create command pool!"));
 	}
 }
 
 void Renderer::createTextureImage() {
-	const auto pixels = m_renderedObjects[1].getTexture(); // FIXME
+	const std::vector<uint32_t> pixels{{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF}};
 
 	int texWidth = std::sqrt(pixels.size());
 	int texHeight = std::sqrt(pixels.size());
-    VkDeviceSize imageSize = pixels.size() * 4;
+
+    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+}
+
+void Renderer::updateTextureImage() {
+	const std::vector<uint32_t> pixels{{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF}};
+	// const auto pixels = m_renderedObjects[1].getTexture(); // FIXME
+	int texWidth = std::sqrt(pixels.size());
+	int texHeight = std::sqrt(pixels.size());
+
+    VkDeviceSize imageSize = pixels.size() * sizeof(uint32_t);
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -823,8 +835,6 @@ void Renderer::createTextureImage() {
     vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
 	memcpy(data, pixels.data(), static_cast<size_t>(imageSize));
     vkUnmapMemory(device, stagingBufferMemory);
-
-    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
 	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
@@ -1034,9 +1044,16 @@ void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
 
 void Renderer::createVertexBuffer()
 {
+	const uint64_t vertexCount = 5000000;
+	VkDeviceSize bufferSize = sizeof(Vertex) * vertexCount;
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+}
+
+void Renderer::updateVertexBuffer()
+{
 	const uint64_t vertexCount = std::accumulate(m_renderedObjects.begin(), m_renderedObjects.end(), 0,
 		[](auto count, const auto &renderedObject){ return count + renderedObject.getVertices().size(); });
-
 	VkDeviceSize bufferSize = sizeof(Vertex) * vertexCount;
 
 	VkBuffer stagingBuffer;
@@ -1052,8 +1069,6 @@ void Renderer::createVertexBuffer()
 	}
 	vkUnmapMemory(device, stagingBufferMemory);
 
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
-
 	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -1062,9 +1077,16 @@ void Renderer::createVertexBuffer()
 
 void Renderer::createIndexBuffer()
 {
+	const uint64_t indexCount = 20000000;
+	VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+}
+
+void Renderer::updateIndexBuffer()
+{
 	const uint64_t indexCount = std::accumulate(m_renderedObjects.begin(), m_renderedObjects.end(), 0,
 		[](auto count, const auto &renderedObject){ return count + renderedObject.getIndices().size(); });
-
 	VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
 
 	VkBuffer stagingBuffer;
@@ -1079,8 +1101,6 @@ void Renderer::createIndexBuffer()
 		idx += renderedObject.getIndices().size();
 	}
 	vkUnmapMemory(device, stagingBufferMemory);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
 	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 

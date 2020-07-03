@@ -1,6 +1,7 @@
 #include "app.hpp"
 
 #include <memory>
+#include <future>
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -49,41 +50,76 @@ std::vector<ChunkID> App::calculateRequiredChunkIds() {
 }
 
 
-void App::loadData()
+void App::synchronizeChunks()
 {
 	// https://fbinter.stadt-berlin.de/fb/wms/senstadt/k_luftbild2019_rgb?service=wms&request=GetMap&layers=0&styles=default&srs=EPSG:25833&bbox=373000,5810000,374000,5812000&width=5000&height=5000&format=image/jpeg
 	// https://fbinter.stadt-berlin.de/fb/wms/senstadt/k_dgm1/?service=wms&request=GetMap&layers=1&styles=default&srs=EPSG:25833&bbox=373000,5810000,374000,5812000&width=5000&height=5000&format=image/jpeg
 
-	auto heightDataLoader = HeightDataLoader();
-	auto sateliteImageLoader = SateliteImageLoader();
-	auto buildingsLoader = BuildingsLoader();
+	if (chunkLoadingFuture) {
+		if (chunkLoadingFuture->wait_for(std::chrono::microseconds(0)) != std::future_status::ready) {
+			// Chunk loading is in progress.
+			return;
+		} else {
+			// Chunk loading is done.
+			const auto newChunks = chunkLoadingFuture->get();
+			chunkLoadingFuture.reset();
 
-	const auto chunkIDs = calculateRequiredChunkIds();
-	for (auto &chunkID : chunkIDs) {
-		auto chunk = Chunk({ std::get<0>(chunkID), std::get<1>(chunkID) }, std::get<2>(chunkID));
-		chunk.load(heightDataLoader, sateliteImageLoader, buildingsLoader);
+			for (const auto &chunk : newChunks) {
+				m_chunks.insert({chunk.getId(), chunk});
+			}
 
-		m_chunks.insert({chunk.getId(), chunk});
+			std::vector<RenderedObject> objects(m_additionalRenderedObjects.begin(), m_additionalRenderedObjects.end());
+			for (const auto &chunk : m_chunks) {
+				objects.insert(objects.end(), chunk.second.getRenderedObjects().begin(), chunk.second.getRenderedObjects().end());
+			}
+			renderer->setRenderedObjects(objects);
+
+			return;
+		}
 	}
 
-	const auto maxX = m_position.x + extent;
-	const auto maxY = m_position.y + extent;
-	m_additionalRenderedObjects.push_back(loadOSMData(m_position.x, m_position.y, maxX, maxY));
+	const auto requiredChunkIDs = calculateRequiredChunkIds();
+
+	std::set<ChunkID> chunkIDsToUnload;
+	for (const auto &[chunkID, chunk] : m_chunks) {
+		chunkIDsToUnload.insert(chunkID);
+	}
+
+	std::set<ChunkID> chunkIDsToLoad;
+	for (const auto &chunkID : requiredChunkIDs) {
+		if (chunkIDsToUnload.erase(chunkID) > 0) {
+			// chunk is already loaded
+			continue;
+		}
+		chunkIDsToLoad.insert(chunkID);
+	}
+
+	if (!chunkIDsToLoad.empty() || !chunkIDsToUnload.empty()) {
+		for (const auto &chunkId : chunkIDsToUnload) {
+			m_chunks.erase(chunkId);
+		}
+
+		chunkLoadingFuture = std::async(std::launch::async, [](const std::set<ChunkID> chunkIDsToLoad, HeightDataLoader &heightDataLoader, SateliteImageLoader &sateliteImageLoader, BuildingsLoader &buildingsLoader) {
+			std::vector<Chunk> chunks;
+			for (const auto &chunkID : chunkIDsToLoad) {
+				auto chunk = Chunk::fromChunkID(chunkID);
+				chunk.load(heightDataLoader, sateliteImageLoader, buildingsLoader);
+				chunks.push_back(chunk);
+			}
+
+			return chunks;
+		}, chunkIDsToLoad, std::ref(heightDataLoader), std::ref(sateliteImageLoader), std::ref(buildingsLoader));
+	}
 }
 
 void App::run()
 {
-	loadData();
+	m_additionalRenderedObjects.push_back(loadOSMData());
+
 	initWindow();
-
-	std::vector<RenderedObject> objects(m_additionalRenderedObjects.begin(), m_additionalRenderedObjects.end());
-	for (const auto &chunk : m_chunks) {
-		objects.insert(objects.end(), chunk.second.getRenderedObjects().begin(), chunk.second.getRenderedObjects().end());
-	}
-
 	renderer = std::make_unique<Renderer>(window);
-	renderer->setRenderedObjects(objects);
 	renderer->initVulkan();
+
 	mainLoop();
 	renderer->cleanup();
 	destroyWindow();
@@ -140,6 +176,9 @@ void App::processInput()
 		const auto horizontalTranslation = keyboard.isOnePressed(GLFW_KEY_D, GLFW_KEY_A);
 		cameraPosition.x += 1.0f * delta * horizontalTranslation * zoom;
 		cameraPosition.y += 1.0f * delta * verticalTranslation * zoom;
+
+		m_position.x += 1.0f * delta * horizontalTranslation * zoom;
+		m_position.y += 1.0f * delta * verticalTranslation * zoom;
 	}
 	{
 		const auto scroll = keyboard.getScrollOffset();
@@ -160,8 +199,10 @@ void App::processInput()
 		glm::vec3(0.0f, 0.0f, 1.0f) // up
 	);
 
-	std::cout << cameraPosition.x << ", " << cameraPosition.y << ", " << cameraPosition.z << std::endl;
+	spdlog::trace("x: {}, y: {}, z: {}", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 	renderer->setCameraMatrix(mat);
+
+	synchronizeChunks();
 }
 
 void App::setWindowTitle(const std::string &title)

@@ -18,15 +18,8 @@
 
 class MyOSMHandler : public osmium::handler::Handler
 {
-	const float _minX, _maxX, _minY, _maxY;
-
-	std::map<osmium::object_id_type, Node> _nodes;
-	std::vector<Way> _ways;
-
-	bool processedWay = false;
-
 public:
-	MyOSMHandler(const float minX, const float maxX, const float minY, const float maxY) : _minX{minX}, _maxX{maxX}, _minY{minY}, _maxY{maxY} {}
+	MyOSMHandler(): processedWay{false} {}
 
 	void node(const osmium::Node &node)
 	{
@@ -90,27 +83,20 @@ public:
 	}
 
 private:
-	bool isInBounds(const osmium::Location &location)
-	{
-		if (!location.valid())
-		{
-			return false;
-		}
-		const auto &result = CoordinateHelper::latLonToEPSG25833(location);
-		const auto x = result.x;
-		const auto y = result.y;
-		return x >= _minX && y >= _minY && x <= _maxX && y <= _maxY;
-	}
+	std::map<osmium::object_id_type, Node> _nodes;
+	std::vector<Way> _ways;
+
+	bool processedWay;
 };
 
 
-RenderedObject loadOSMData(uint32_t minX, uint32_t minY, uint32_t maxX, uint32_t maxY)
+RenderedObject loadOSMData()
 {
 	spdlog::info("Loading OSM data.");
 
 	const auto osmFilePath = "datasets/osm/brandenburg-latest.osm.pbf";
 	osmium::io::Reader osmReader{osmFilePath, osmium::osm_entity_bits::node | osmium::osm_entity_bits::way};
-	MyOSMHandler osmHandler(minX, maxX, minY, maxY);
+	MyOSMHandler osmHandler;
 	osmium::apply(osmReader, osmHandler);
 	osmReader.close();
 	const auto &[osmNodes, osmWays] = osmHandler.get();

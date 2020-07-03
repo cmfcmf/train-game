@@ -22,7 +22,7 @@ void main() {
 
 	// outColor = vec4(1.0, 1.0 * min(1.0, (inZ - 27) / 20), 0.0, 1.0);
 
-	float ratio = 1.0;
+	float ratio = 0.0;
 
 	outColor = vec4(
 		texture(texSampler, inTexCoord).rgb * ratio

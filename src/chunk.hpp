@@ -32,6 +32,11 @@ public:
 		}
 	}
 
+	static Chunk fromChunkID(const ChunkID& chunkID) {
+		auto chunk = Chunk({ std::get<0>(chunkID), std::get<1>(chunkID) }, std::get<2>(chunkID));
+		return chunk;
+	}
+
 	void load(HeightDataLoader&, SateliteImageLoader&, BuildingsLoader&);
 
 	const std::vector<float>& getHeightData() const {

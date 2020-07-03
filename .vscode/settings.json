@@ -54,7 +54,10 @@
 		"unordered_set": "cpp",
 		"*.def": "cpp",
 		"complex": "cpp",
-		"filesystem": "cpp"
+		"filesystem": "cpp",
+		"*.ipp": "cpp",
+		"future": "cpp",
+		"ranges": "cpp"
 	},
 	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 	"cmake.configureOnOpen": true,

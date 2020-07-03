@@ -2,6 +2,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include <vector>
+#include <future>
+#include <optional>
+
 #include "keyboard.hpp"
 #include "renderer.hpp"
 #include "chunk.hpp"
@@ -17,6 +21,10 @@ public:
 	void run();
 
 private:
+	HeightDataLoader heightDataLoader;
+	SateliteImageLoader sateliteImageLoader;
+	BuildingsLoader buildingsLoader;
+
 	std::shared_ptr<GLFWwindow> window;
 	std::unique_ptr<Renderer> renderer;
 
@@ -31,7 +39,9 @@ private:
 
 	static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
 
-	void loadData();
+	std::optional<std::future<std::vector<Chunk>>> chunkLoadingFuture;
+
+	void synchronizeChunks();
 
 	void initWindow();
 

@@ -148,6 +148,8 @@ private:
 
 	void createTextureImage();
 
+	void updateTextureImage();
+
 	void createTextureImageView();
 
 	void createTextureSampler();
@@ -164,7 +166,11 @@ private:
 
 	void createVertexBuffer();
 
+	void updateVertexBuffer();
+
 	void createIndexBuffer();
+
+	void updateIndexBuffer();
 
 	void createUniformBuffers();
 
